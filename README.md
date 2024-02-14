@@ -2,8 +2,8 @@
 This is a data analytics senior research project on implicit bias using the implicit association test data. 
 
 ### Author 
-Grace Lock 
-Denison University '24 
+Grace Lock | 
+Denison University '24 | 
 lock_g1@denison.edu 
 
 ### Background 
