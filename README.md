@@ -17,3 +17,4 @@ This study will look at different demographics’ implicit bias levels. Since im
 The data for this project comes from Project Implicit's implicit association tests. The data sets were downloaded from their website. 
 
 ### Code 
+All code is in R. 
