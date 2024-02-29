@@ -1,0 +1,152 @@
+---
+title: "DA401 Project"
+author: "Grace Lock"
+date: "2024-01-30"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(haven)
+library(dplyr)
+library(surveytoolbox)
+library(labelled)
+```
+
+### Skin tone data 
+
+```{r}
+skintonedata <- read_sav("/Users/gracelock/Downloads/Skin IAT.public.2023 2.sav")
+
+skintonedata |>  select("session_id", "birthyear", "birthSex", "genderIdentity", "politicalid_7",
+                                 "num_002", "ethnicityomb", "raceomb_002", "edu", "D_biep.LightSkin_Good_all", 
+                                 "att7", "Tdark", "Tlight") |>
+                 na.omit("D_biep.LightSkin_Good_all") |>
+                 rename("num_tests" = "num_002",
+                        "ethnicity" = "ethnicityomb",
+                        "race" = "raceomb_002",
+                        "score" = "D_biep.LightSkin_Good_all",
+                        "politicalid" = "politicalid_7",
+                        "skintone_preference" = "att7",
+                        "warmth_dark" = "Tdark",
+                        "warmth_light" = "Tlight") |>
+                 mutate(age = 2024 - birthyear) |>
+                 select(-birthyear) -> skintonedata
+
+#birthsex: 1 = male, 2 = female
+
+#genderIdentity: 1 = Male, 2 = Female, 3 = Trans male/Trans man, 4 = Trans female/Trans woman,
+# 5 = Genderqueer/Gender nonconforming, 6 = A different identity **people could choose more than one
+
+#warmth: 0 "Extremely cold" 1 "Very cold" 2 "Moderately cold" 3 "Somewhat cold" 4 "Slightly cold" 5 "Neither warm nor cold" 6 "Slightly warm" 7 "Somewhat warm" 8 "Moderately warm" 9 "Very warm" 10 "Extremely warm" 
+
+#skintone_preference: 1 "I strongly prefer Dark Skinned People to Light Skinned People." 2 "I moderately prefer Dark Skinned People to Light Skinned People." 3 "I slightly prefer Dark Skinned People to Light Skinned People." 4 "I like Light Skinned People and Dark Skinned People equally." 5 "I slightly prefer Light Skinned People to Dark Skinned People." 6 "I moderately prefer Light Skinned People to Dark Skinned People." 7 "I strongly prefer Light Skinned People to Dark Skinned People." 
+
+#race: 1 = American Indian/Alaska Native, 2	= East Asian, 3 = South Asian, 4 = Native Hawaiian or other Pacific #Islander, 5 = Black or African American, 6	= White, 7 = Other or Unknown, 8 = Multiracial
+
+#ethnicity:1 "Hispanic or Latino" 2 "Not Hispanic or Latino" 3 "Unknown"
+```
+
+```{r}
+skintonedata$genderIdentity <- lapply(skintonedata$genderIdentity, val_label())
+head(skintonedata$genderIdentity)
+
+gender <- list()
+for (i in skintonedata$genderIdentity) {
+  gender <- append(gender, list(val_label(i, i[1])))
+}
+head(gender)
+```
+
+
+### Gender data 
+
+```{r}
+genderdata <- read_sav("/Users/gracelock/Downloads/Gender-Career IAT.public.2023.sav")
+```
+
+```{r}
+genderdata |> select("session_id", "birthyear", "num_002", "birthSex", "genderIdentity", "ethnicityomb",
+                     "raceomb_002", "D_biep.Male_Career_all", "impcareer", "impfamily", "politicalid_7") |> 
+              na.omit("D_biep.Male_Career_all") |>
+              mutate(age = 2024-birthyear) |> 
+              select(-birthyear) |> 
+              rename("num_tests" = "num_002",
+                     "ethnicity" = "ethnicityomb",
+                     "race" = "raceomb_002",
+                     "politicalid" = "politicalid_7",
+                     "score" = "D_biep.Male_Career_all",
+                     "att_family" = "impfamily",
+                     "att_carerr" = "impcareer") -> genderdata
+
+genderdata
+```
+
+### Sexuality data
+
+```{r}
+sexualitydata <- read_sav("/Users/gracelock/Downloads/Sexuality IAT.public.2023.sav")
+```
+
+```{r}
+sexualitydata |> select("session_id", "birthyear", "num_002", "birthSex", "genderIdentity", "ethnicityomb",
+                     "raceomb_002", "D_biep.Straight_Good_all", "Tgayleswomen", "Tgaymen", "Tstraightmen",
+                     "politicalid_7") |>
+                na.omit("D_biep.Straight_Good_all") |>
+                mutate(age = 2024-birthyear) |> 
+                select(-birthyear) |> 
+                rename("num_tests" = "num_002",
+                      "ethnicity" = "ethnicityomb",
+                      "race" = "raceomb_002",
+                      
+                      "score" = "D_biep.Straight_Good_all",
+                      "warmth_gayleswomen" = "Tgayleswomen",
+                      "warmth_gaymen" = "Tgaymen",
+                      "warmth_straightmen" = "Tstraightmen") -> sexualitydata
+
+sexualitydata
+```
+
+### Weight data 
+
+```{r}
+weightdata <- read_sav("/Users/gracelock/Downloads/Weight IAT.public.2023.sav")
+```
+
+```{r}
+weightdata |> select("session_id", "birthyear", "num_002", "birthSex", "genderIdentity", "ethnicityomb",
+                     "raceomb_002", "D_biep.Thin_Good_all", "att7", "tthin", "tfat", "comptomost_001") |>
+              na.omit("D_biep.Thin_Good_all") |>
+              mutate(age = 2024-birthyear) |> 
+              select(-birthyear) |> 
+              rename("num_tests" = "num_002",
+                      "ethnicity" = "ethnicityomb",
+                      "race" = "raceomb_002",
+                      "score" = "D_biep.Thin_Good_all",
+                      "body_preference" = "att7",
+                      "warmth_thin" = "tthin",
+                      "warmth_fat" = "tfat",
+                      "comptomost" = "comptomost_001") -> weightdata
+
+#comptomost: 1 "Much thinner" 2 "Moderately thinner" 3 "Slightly thinner" 4 "About the same" 5 "Slightly heavier" 6 "Moderately heavier" 7 "Much heavier"
+
+weightdata
+```
+
+
+GenderIdentity: 
+  - look how many people in each data set that selected multiple gender identities 
+  - combine people who selected multiple categories into one group 
+  - exclude these people since if it is a small group 
+
+### Citations
+
+```{r}
+rpart_cit <- citation("rpart")
+glmnet_cit <- citation("glmnet")
+```
+
+
