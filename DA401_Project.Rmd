@@ -12,16 +12,17 @@ knitr::opts_chunk$set(echo = TRUE)
 ```{r}
 library(haven)
 library(dplyr)
-library(surveytoolbox)
-library(labelled)
+library(tidyverse)
+library(socsci)
 ```
+
 
 ### Skin tone data 
 
 ```{r}
 skintonedata <- read_sav("/Users/gracelock/Downloads/Skin IAT.public.2023 2.sav")
 
-skintonedata |>  select("session_id", "birthyear", "birthSex", "genderIdentity", "politicalid_7",
+skintonedata |>  select("session_id", "birthyear", "birthSex", "politicalid_7",
                                  "num_002", "ethnicityomb", "raceomb_002", "edu", "D_biep.LightSkin_Good_all", 
                                  "att7", "Tdark", "Tlight") |>
                  na.omit("D_biep.LightSkin_Good_all") |>
@@ -51,15 +52,50 @@ skintonedata |>  select("session_id", "birthyear", "birthSex", "genderIdentity",
 ```
 
 ```{r}
-skintonedata$genderIdentity <- lapply(skintonedata$genderIdentity, val_label())
-head(skintonedata$genderIdentity)
+#Population data 
+skintonedata |> 
+  ggplot() + 
+  aes(
+    x = age
+  ) + 
+  geom_histogram()
 
-gender <- list()
-for (i in skintonedata$genderIdentity) {
-  gender <- append(gender, list(val_label(i, i[1])))
-}
-head(gender)
+skintonedata |> 
+  mutate(
+    race = case_when(
+      race %in% c(2, 3) ~ "Asian",
+      race == 5 ~ "Black or African American",
+      race == 6 ~ "White",
+      race %in% c(1, 4, 7) ~ "Other",
+      race == 8 ~ "Multiracial",
+    ) ) |>
+  ct(race) |> 
+  ggplot() + 
+  aes(
+    x = race,
+    y = pct
+  ) + 
+  geom_col() +
+  scale_y_continuous(
+    labels = scales::percent 
+  )
+
+skintonedata |> 
+  ggplot() + 
+  aes(
+    x = num_tests
+  ) + 
+  geom_histogram()
+
+skintonedata |> 
+  ggplot() + 
+  aes(
+    x = politicalid
+  ) + 
+  geom_histogram()
+
 ```
+
 
 
 ### Gender data 
@@ -69,7 +105,7 @@ genderdata <- read_sav("/Users/gracelock/Downloads/Gender-Career IAT.public.2023
 ```
 
 ```{r}
-genderdata |> select("session_id", "birthyear", "num_002", "birthSex", "genderIdentity", "ethnicityomb",
+genderdata |> select("session_id", "birthyear", "num_002", "birthSex", "ethnicityomb",
                      "raceomb_002", "D_biep.Male_Career_all", "impcareer", "impfamily", "politicalid_7") |> 
               na.omit("D_biep.Male_Career_all") |>
               mutate(age = 2024-birthyear) |> 
@@ -85,6 +121,7 @@ genderdata |> select("session_id", "birthyear", "num_002", "birthSex", "genderId
 genderdata
 ```
 
+
 ### Sexuality data
 
 ```{r}
@@ -92,7 +129,7 @@ sexualitydata <- read_sav("/Users/gracelock/Downloads/Sexuality IAT.public.2023.
 ```
 
 ```{r}
-sexualitydata |> select("session_id", "birthyear", "num_002", "birthSex", "genderIdentity", "ethnicityomb",
+sexualitydata |> select("session_id", "birthyear", "num_002", "birthSex", "ethnicityomb",
                      "raceomb_002", "D_biep.Straight_Good_all", "Tgayleswomen", "Tgaymen", "Tstraightmen",
                      "politicalid_7") |>
                 na.omit("D_biep.Straight_Good_all") |>
@@ -110,6 +147,7 @@ sexualitydata |> select("session_id", "birthyear", "num_002", "birthSex", "gende
 sexualitydata
 ```
 
+
 ### Weight data 
 
 ```{r}
@@ -117,7 +155,7 @@ weightdata <- read_sav("/Users/gracelock/Downloads/Weight IAT.public.2023.sav")
 ```
 
 ```{r}
-weightdata |> select("session_id", "birthyear", "num_002", "birthSex", "genderIdentity", "ethnicityomb",
+weightdata |> select("session_id", "birthyear", "num_002", "birthSex", "ethnicityomb",
                      "raceomb_002", "D_biep.Thin_Good_all", "att7", "tthin", "tfat", "comptomost_001") |>
               na.omit("D_biep.Thin_Good_all") |>
               mutate(age = 2024-birthyear) |> 
