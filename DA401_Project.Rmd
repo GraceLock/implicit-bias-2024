@@ -49,10 +49,14 @@ skintonedata |>  select("session_id", "birthyear", "birthSex", "politicalid_7",
 #race: 1 = American Indian/Alaska Native, 2	= East Asian, 3 = South Asian, 4 = Native Hawaiian or other Pacific #Islander, 5 = Black or African American, 6	= White, 7 = Other or Unknown, 8 = Multiracial
 
 #ethnicity:1 "Hispanic or Latino" 2 "Not Hispanic or Latino" 3 "Unknown"
+
+#politicalid: 1 "strongly conservative" 2 "moderately conservative" 3 "slightly conservative" 4 "neutral" 5 "slightly liberal" 6 "moderately liberal" 7 "strongly liberal"
 ```
 
 ```{r}
 #Population data 
+
+#Age
 skintonedata |> 
   ggplot() + 
   aes(
@@ -60,6 +64,7 @@ skintonedata |>
   ) + 
   geom_histogram()
 
+#Race
 skintonedata |> 
   mutate(
     race = case_when(
@@ -80,6 +85,7 @@ skintonedata |>
     labels = scales::percent 
   )
 
+#Number of tests
 skintonedata |> 
   ggplot() + 
   aes(
@@ -87,15 +93,37 @@ skintonedata |>
   ) + 
   geom_histogram()
 
+#Political Identification
 skintonedata |> 
+  mutate(
+    politicalid = case_when(
+      politicalid == 1 ~ "strongly\nconservative",
+      politicalid == 2 ~ "moderately\nconservative",
+      politicalid == 3 ~ "slightly\nconservative",
+      politicalid == 4 ~ "neutral",
+      politicalid == 5 ~ "slightly\nliberal",
+      politicalid == 6 ~ "moderately\nliberal",
+      politicalid == 7 ~ "strongly\nliberal"
+    )
+  ) |>
+  ct(politicalid) |>
   ggplot() + 
   aes(
-    x = politicalid
+    x = politicalid,
+    y = pct
   ) + 
-  geom_histogram()
+  geom_col() +
+  scale_y_continuous(
+    labels = scales::percent 
+  ) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
 
 ```
 
+```{r}
+#LASSO Regression 
+
+```
 
 
 ### Gender data 
