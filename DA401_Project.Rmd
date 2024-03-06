@@ -10,10 +10,14 @@ knitr::opts_chunk$set(echo = TRUE)
 ```
 
 ```{r}
-library(haven)
+library(haven) #Reading in the data
 library(dplyr)
 library(tidyverse)
-library(socsci)
+library(socsci) #Helps with data manipulation
+library(glmnet) #Lasso Regression
+library(nnet) #Multinomial Logistic Regression
+library(pROC) #ROC Visualization (logistic regression)
+library(rpart) #Regression Tree
 ```
 
 
@@ -29,18 +33,15 @@ skintonedata |>  select("session_id", "birthyear", "birthSex", "politicalid_7",
                  rename("num_tests" = "num_002",
                         "ethnicity" = "ethnicityomb",
                         "race" = "raceomb_002",
-                        "score" = "D_biep.LightSkin_Good_all",
                         "politicalid" = "politicalid_7",
                         "skintone_preference" = "att7",
                         "warmth_dark" = "Tdark",
-                        "warmth_light" = "Tlight") |>
+                        "warmth_light" = "Tlight",
+                        "score" = "D_biep.LightSkin_Good_all") |>
                  mutate(age = 2024 - birthyear) |>
                  select(-birthyear) -> skintonedata
 
 #birthsex: 1 = male, 2 = female
-
-#genderIdentity: 1 = Male, 2 = Female, 3 = Trans male/Trans man, 4 = Trans female/Trans woman,
-# 5 = Genderqueer/Gender nonconforming, 6 = A different identity **people could choose more than one
 
 #warmth: 0 "Extremely cold" 1 "Very cold" 2 "Moderately cold" 3 "Somewhat cold" 4 "Slightly cold" 5 "Neither warm nor cold" 6 "Slightly warm" 7 "Somewhat warm" 8 "Moderately warm" 9 "Very warm" 10 "Extremely warm" 
 
@@ -74,16 +75,11 @@ skintonedata |>
       race %in% c(1, 4, 7) ~ "Other",
       race == 8 ~ "Multiracial",
     ) ) |>
-  ct(race) |> 
   ggplot() + 
   aes(
-    x = race,
-    y = pct
+    x = race
   ) + 
-  geom_col() +
-  scale_y_continuous(
-    labels = scales::percent 
-  )
+  geom_bar() 
 
 #Number of tests
 skintonedata |> 
@@ -96,7 +92,7 @@ skintonedata |>
 #Political Identification
 skintonedata |> 
   mutate(
-    politicalid = case_when(
+    politicalid = frcode(
       politicalid == 1 ~ "strongly\nconservative",
       politicalid == 2 ~ "moderately\nconservative",
       politicalid == 3 ~ "slightly\nconservative",
@@ -106,23 +102,239 @@ skintonedata |>
       politicalid == 7 ~ "strongly\nliberal"
     )
   ) |>
-  ct(politicalid) |>
   ggplot() + 
   aes(
-    x = politicalid,
-    y = pct
+    x = politicalid
   ) + 
-  geom_col() +
-  scale_y_continuous(
-    labels = scales::percent 
-  ) +
+  geom_bar() +
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
 
+#Education
+skintonedata |>
+  mutate(
+    edu = frcode(
+      edu %in% c(1, 2, 3) ~ "less than high school",
+      edu == 4 ~ "high school graduate",
+      edu == 5 ~ "some college",
+      edu == 6 ~ "associate's degree",
+      edu == 7 ~ "bachelor's degree",
+      edu %in% c(8, 9, 10, 11, 12, 13, 14) ~ "higher education"
+    )
+  ) |>
+  ggplot() + 
+  aes(
+    x = edu
+  ) + 
+  geom_bar()  +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+#Sex
+skintonedata |> 
+  mutate(
+    birthSex = case_when(
+      birthSex == 1 ~ "Male",
+      birthSex == 2 ~ "Female"
+    )
+  ) |>
+  ggplot() +
+  aes(
+    x = birthSex
+  ) + 
+  geom_bar()
+
+#Skin tone Preference
+skintonedata |> 
+  mutate(
+    skintone_preference = frcode(
+      skintone_preference == 1 ~ "strongly prefer\nDark Skinned People",
+      skintone_preference == 2 ~ "moderately prefer\nDark Skinned People",
+      skintone_preference == 3 ~ "slightly prefer\nDark Skinned People",
+      skintone_preference == 4 ~ "I like Light Skinned People and\nDark\nSkinned People equally",
+      skintone_preference == 5 ~ "slightly prefer\nLight Skinned People",
+      skintone_preference == 6 ~ "moderately prefer\nLight Skinned People",
+      skintone_preference == 7 ~ "strongly prefer\nLight Skinned People"
+    )
+  ) |> 
+  ggplot() + 
+  aes(
+    x = skintone_preference
+  ) + 
+  geom_bar() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+#Score  
+skintonedata |> 
+  ggplot() + 
+  aes(
+    x = score
+  ) + 
+  geom_histogram()
 ```
 
 ```{r}
 #LASSO Regression 
 
+predictor_vars <- c("num_tests", "ethnicity", "race", "politicalid", "skintone_preference", "warmth_dark",
+                "warmth_light", "age", "edu", "birthSex")
+response_var <- as.vector(skintonedata$score)
+
+X <- as.matrix(skintonedata[, predictor_vars])  # Predictor matrix
+Y <- response_var  # Response variable
+
+# Perform Lasso regression
+lasso_model <- glmnet(X, Y, alpha = 1)  # alpha = 1 for Lasso regression
+
+# Plot the cross-validated mean squared error (CV MSE) vs lambda
+plot(lasso_model)
+
+# Select lambda with minimum CV MSE
+best_lambda <- cv.glmnet(X, Y, alpha = 1)$lambda.min
+
+# Refit the model with the selected lambda
+lasso_model_best <- glmnet(X, Y, alpha = 1, lambda = best_lambda)
+
+# Make predictions
+predictions <- predict(lasso_model_best, newx = X)
+
+# Calculate MSE
+mse <- mean((predictions - Y)^2)
+
+# Print MSE
+print(paste("Mean Squared Error (MSE):", mse))
+
+# Print the coefficients
+print(coef(lasso_model_best))
+
+print(best_lambda)
+```
+
+Non-zero coefficients: Predictors with non-zero coefficients in the printed output are selected by the Lasso regression model. These predictors are deemed to have a significant influence on the response variable.
+
+Zero coefficients: Predictors with coefficients set to zero in the printed output are effectively excluded from the model. These predictors are considered to have little or no impact on the response variable according to the Lasso regularization.
+
+Coefficient values: The magnitude of the coefficients indicates the strength of the relationship between each predictor and the response variable. Larger coefficient values suggest stronger relationships, whereas smaller values suggest weaker relationships.
+
+Intercept term: Lasso regression also estimates an intercept term, which represents the expected value of the response variable when all predictor variables are zero.
+
+```{r}
+"""
+predictor_vars <- c('num_tests', 'ethnicity', 'race', 'politicalid', 'skintone_preference', 'warmth_dark',
+                'warmth_light', 'age', 'edu', 'birthSex')
+
+X <- as.matrix(skintonedata[, predictor_vars])  # Predictor matrix
+Y <- response_var  # Response variable
+
+# Create a grid of lambda values for cross-validation
+lambda_grid <- 10^seq(10, -2, length = 100)
+
+# Perform cross-validated Lasso regression
+lasso_model_cv <- cv.glmnet(X, Y, alpha = 1, lambda = lambda_grid, nfolds = 10)
+
+# Plot mean squared error (MSE) vs lambda
+plot(lasso_model_cv)
+
+# Select lambda with minimum MSE
+best_lambda <- lasso_model_cv$lambda.min
+
+# Refit the model with the selected lambda
+lasso_model_best <- glmnet(X, Y, alpha = 1, lambda = best_lambda)
+
+# Make predictions
+predictions <- predict(lasso_model_best, newx = X)
+
+# Calculate MSE
+mse <- mean((predictions - Y)^2)
+
+# Print MSE
+print(paste('Mean Squared Error (MSE):', mse))
+
+# Print the coefficients
+print(coef(lasso_model_best))
+
+print(best_lambda)
+"""
+```
+
+```{r}
+#Logistic Regression - create categories
+
+#create categories in score variable (no bias, moderate bias, strong bias)
+
+# Define the breaks for creating three categories
+breaks <- c(-Inf, -0.0001, 0.0001, 0.25, 0.75, Inf)
+
+# Create a new categorical variable based on the breaks
+skintonedata$scorecat <- cut(skintonedata$score, breaks = breaks, labels = c("Opposite", "None", "Low", "Medium", "High"))
+
+# Print the summary of the new categorical variable
+summary(skintonedata$scorecat)
+```
+
+```{r}
+#Logistic regression
+
+predictor_vars <- c("num_tests", "ethnicity", "politicalid", "skintone_preference",
+                    "warmth_light", "age", "edu", "birthSex")
+response_var <- skintonedata$scorecat
+
+# Fit multinomial logistic regression model
+multinom_model <- multinom(response_var ~ predictor_vars, data = skintonedata)
+
+# Print summary of the model
+summary(multinom_model)
+```
+
+```{r}
+#Logistic Regression Visual 
+
+# Predict classes
+predicted_classes <- predict(multinom_model, newdata = skintonedata, type = "class")
+
+# Create confusion matrix
+conf_matrix <- table(skintonedata$scorecat, predicted_classes)
+
+# Print confusion matrix
+print(conf_matrix)
+```
+
+```{r}
+# Predict probabilities for each class
+predicted_probs <- predict(multinom_model, newdata = skintonedata, type = "probs")
+
+# Extract the predicted probabilities for the true class
+true_class_probs <- predicted_probs[cbind(1:nrow(skintonedata), as.numeric(skintonedata$scorecat))]
+
+# Calculate log loss for each observation
+log_loss <- -log(true_class_probs)
+
+# Plot the distribution of log loss values
+hist(log_loss, main = "Distribution of Log Loss", 
+     xlab = "Log Loss", 
+     ylab = "Frequency", 
+     col = "skyblue", 
+     border = "white")
+```
+
+This visualization provides insights into the distribution of log loss values, which is a measure of the accuracy of the predicted probabilities. Lower log loss values indicate better calibration of predicted probabilities to the true outcomes.
+
+The log loss is defined as the negative natural logarithm of the predicted probability assigned to the true class. This value is commonly used as a measure of the accuracy of predicted probabilities in classification tasks.
+
+```{r}
+#Regression Tree 
+
+predictor_vars <- c("num_tests", "ethnicity", "race", "politicalid", "skintone_preference", "warmth_dark",
+                "warmth_light")
+response_var <- skintonedata$score
+
+# Fit regression tree model
+tree_model <- rpart(response_var ~ predictor_vars, data = skintonedata, method = "anova")
+
+# Print the tree
+print(tree_model)
+
+# Plot the tree
+plot(tree_model)
+text(tree_model)
 ```
 
 
