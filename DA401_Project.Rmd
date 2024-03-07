@@ -217,42 +217,40 @@ Coefficient values: The magnitude of the coefficients indicates the strength of 
 Intercept term: Lasso regression also estimates an intercept term, which represents the expected value of the response variable when all predictor variables are zero.
 
 ```{r}
-"""
-predictor_vars <- c('num_tests', 'ethnicity', 'race', 'politicalid', 'skintone_preference', 'warmth_dark',
-                'warmth_light', 'age', 'edu', 'birthSex')
 
-X <- as.matrix(skintonedata[, predictor_vars])  # Predictor matrix
-Y <- response_var  # Response variable
+# predictor_vars <- c('num_tests', 'ethnicity', 'race', 'politicalid', 'skintone_preference', 'warmth_dark',
+#                 'warmth_light', 'age', 'edu', 'birthSex')
+# 
+# X <- as.matrix(skintonedata[, predictor_vars])  # Predictor matrix
+# Y <- response_var  # Response variable
+# 
+# # Create a grid of lambda values for cross-validation
+# lambda_grid <- 10^seq(10, -2, length = 100)
+# 
+# # Perform cross-validated Lasso regression
+# lasso_model_cv <- cv.glmnet(X, Y, alpha = 1, lambda = lambda_grid, nfolds = 10)
+# 
+# # Plot mean squared error (MSE) vs lambda
+# plot(lasso_model_cv)
+# 
+# # Select lambda with minimum MSE
+# best_lambda <- lasso_model_cv$lambda.min
+# 
+# # Refit the model with the selected lambda
+# lasso_model_best <- glmnet(X, Y, alpha = 1, lambda = best_lambda)
+# 
+# # Make predictions
+# predictions <- predict(lasso_model_best, newx = X)
+# 
+# # Calculate MSE
+# mse <- mean((predictions - Y)^2)
+# 
+# # Print MSE
+# print(paste('Mean Squared Error (MSE):', mse))
+# 
+# # Print the coefficients
+# print(coef(lasso_model_best))
 
-# Create a grid of lambda values for cross-validation
-lambda_grid <- 10^seq(10, -2, length = 100)
-
-# Perform cross-validated Lasso regression
-lasso_model_cv <- cv.glmnet(X, Y, alpha = 1, lambda = lambda_grid, nfolds = 10)
-
-# Plot mean squared error (MSE) vs lambda
-plot(lasso_model_cv)
-
-# Select lambda with minimum MSE
-best_lambda <- lasso_model_cv$lambda.min
-
-# Refit the model with the selected lambda
-lasso_model_best <- glmnet(X, Y, alpha = 1, lambda = best_lambda)
-
-# Make predictions
-predictions <- predict(lasso_model_best, newx = X)
-
-# Calculate MSE
-mse <- mean((predictions - Y)^2)
-
-# Print MSE
-print(paste('Mean Squared Error (MSE):', mse))
-
-# Print the coefficients
-print(coef(lasso_model_best))
-
-print(best_lambda)
-"""
 ```
 
 ```{r}
@@ -278,7 +276,7 @@ predictor_vars <- c("num_tests", "ethnicity", "politicalid", "skintone_preferenc
 response_var <- skintonedata$scorecat
 
 # Fit multinomial logistic regression model
-multinom_model <- multinom(response_var ~ predictor_vars, data = skintonedata)
+multinom_model <- multinom(response_var ~ ., data = skintonedata[, c(predictor_vars, "scorecat")])
 
 # Print summary of the model
 summary(multinom_model)
@@ -319,7 +317,7 @@ This visualization provides insights into the distribution of log loss values, w
 
 The log loss is defined as the negative natural logarithm of the predicted probability assigned to the true class. This value is commonly used as a measure of the accuracy of predicted probabilities in classification tasks.
 
-```{r}
+```{r, fig.width=11, fig.height=6}
 #Regression Tree 
 
 predictor_vars <- c("num_tests", "ethnicity", "race", "politicalid", "skintone_preference", "warmth_dark",
@@ -327,7 +325,8 @@ predictor_vars <- c("num_tests", "ethnicity", "race", "politicalid", "skintone_p
 response_var <- skintonedata$score
 
 # Fit regression tree model
-tree_model <- rpart(response_var ~ predictor_vars, data = skintonedata, method = "anova")
+#tree_model <- rpart(response_var ~ ., data = skintonedata[, c(predictor_vars, "scorecat")], method = "anova")
+tree_model <- rpart(response_var ~ ., data = skintonedata[, c(predictor_vars, "scorecat")], method = "class")
 
 # Print the tree
 print(tree_model)
