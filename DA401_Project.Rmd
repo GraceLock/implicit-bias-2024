@@ -204,8 +204,6 @@ print(paste("Mean Squared Error (MSE):", mse))
 
 # Print the coefficients
 print(coef(lasso_model_best))
-
-print(best_lambda)
 ```
 
 Non-zero coefficients: Predictors with non-zero coefficients in the printed output are selected by the Lasso regression model. These predictors are deemed to have a significant influence on the response variable.
@@ -217,39 +215,41 @@ Coefficient values: The magnitude of the coefficients indicates the strength of 
 Intercept term: Lasso regression also estimates an intercept term, which represents the expected value of the response variable when all predictor variables are zero.
 
 ```{r}
+#LASSO Regression 2
+predictor_vars <- c('num_tests', 'ethnicity', 'race', 'politicalid', 'skintone_preference', 'warmth_dark',
+                'warmth_light', 'age', 'edu', 'birthSex')
 
-# predictor_vars <- c('num_tests', 'ethnicity', 'race', 'politicalid', 'skintone_preference', 'warmth_dark',
-#                 'warmth_light', 'age', 'edu', 'birthSex')
-# 
-# X <- as.matrix(skintonedata[, predictor_vars])  # Predictor matrix
-# Y <- response_var  # Response variable
-# 
-# # Create a grid of lambda values for cross-validation
-# lambda_grid <- 10^seq(10, -2, length = 100)
-# 
-# # Perform cross-validated Lasso regression
-# lasso_model_cv <- cv.glmnet(X, Y, alpha = 1, lambda = lambda_grid, nfolds = 10)
-# 
-# # Plot mean squared error (MSE) vs lambda
-# plot(lasso_model_cv)
-# 
-# # Select lambda with minimum MSE
-# best_lambda <- lasso_model_cv$lambda.min
-# 
-# # Refit the model with the selected lambda
-# lasso_model_best <- glmnet(X, Y, alpha = 1, lambda = best_lambda)
-# 
-# # Make predictions
-# predictions <- predict(lasso_model_best, newx = X)
-# 
-# # Calculate MSE
-# mse <- mean((predictions - Y)^2)
-# 
-# # Print MSE
-# print(paste('Mean Squared Error (MSE):', mse))
-# 
-# # Print the coefficients
-# print(coef(lasso_model_best))
+X <- as.matrix(skintonedata[, predictor_vars])  # Predictor matrix
+Y <- skintonedata$score  # Response variable
+
+# Create a grid of lambda values for cross-validation
+lambda_grid <- 10^seq(10, -2, length = 100)
+
+# Perform cross-validated Lasso regression
+lasso_model_cv <- cv.glmnet(X, Y, alpha = 1, lambda = lambda_grid, nfolds = 10)
+
+# Plot mean squared error (MSE) vs lambda
+plot(lasso_model_cv)
+
+# Select lambda with minimum MSE
+best_lambda <- lasso_model_cv$lambda.min
+
+# Refit the model with the selected lambda
+lasso_model_best <- glmnet(X, Y, alpha = 1, lambda = best_lambda)
+
+# Make predictions
+predictions <- predict(lasso_model_best, newx = X)
+
+# Calculate MSE
+mse <- mean((predictions - Y)^2)
+
+# Print MSE
+print(paste('Mean Squared Error (MSE):', mse))
+
+# Print the coefficients
+print(coef(lasso_model_best))
+
+print(best_lambda)
 
 ```
 
@@ -269,14 +269,31 @@ summary(skintonedata$scorecat)
 ```
 
 ```{r}
+#Training and Test Data 
+
+# Set seed for reproducibility (allows for the same random split when rerunning)
+set.seed(123)
+
+# Generate indices for train and test data
+train_indices <- sample(1:nrow(skintonedata), 0.8 * nrow(skintonedata))  # 80% for training
+test_indices <- setdiff(1:nrow(skintonedata), train_indices)  # Remaining for testing
+
+# Create training and test data frames
+train_data <- skintonedata[train_indices, ]
+test_data <- skintonedata[test_indices, ]
+
+train_data <- train_data[, c(predictor_vars, "scorecat")]
+test_data <- test_data[, c(predictor_vars, "scorecat")]
+```
+
+```{r}
 #Logistic regression
 
 predictor_vars <- c("num_tests", "ethnicity", "politicalid", "skintone_preference",
                     "warmth_light", "age", "edu", "birthSex")
-response_var <- skintonedata$scorecat
 
 # Fit multinomial logistic regression model
-multinom_model <- multinom(response_var ~ ., data = skintonedata[, c(predictor_vars, "scorecat")])
+multinom_model <- multinom(scorecat ~ ., data = train_data)
 
 # Print summary of the model
 summary(multinom_model)
@@ -286,10 +303,10 @@ summary(multinom_model)
 #Logistic Regression Visual 
 
 # Predict classes
-predicted_classes <- predict(multinom_model, newdata = skintonedata, type = "class")
+predicted_classes <- predict(multinom_model, newdata = test_data, type = "class")
 
 # Create confusion matrix
-conf_matrix <- table(skintonedata$scorecat, predicted_classes)
+conf_matrix <- table(test_data$scorecat, predicted_classes)
 
 # Print confusion matrix
 print(conf_matrix)
@@ -344,7 +361,7 @@ genderdata <- read_sav("/Users/gracelock/Downloads/Gender-Career IAT.public.2023
 ```
 
 ```{r}
-genderdata |> select("session_id", "birthyear", "num_002", "birthSex", "ethnicityomb",
+genderdata |> select("session_id", "birthyear", "num_002", "birthSex", "ethnicityomb", "edu",
                      "raceomb_002", "D_biep.Male_Career_all", "impcareer", "impfamily", "politicalid_7") |> 
               na.omit("D_biep.Male_Career_all") |>
               mutate(age = 2024-birthyear) |> 
@@ -356,8 +373,79 @@ genderdata |> select("session_id", "birthyear", "num_002", "birthSex", "ethnicit
                      "score" = "D_biep.Male_Career_all",
                      "att_family" = "impfamily",
                      "att_carerr" = "impcareer") -> genderdata
+```
 
-genderdata
+```{r}
+#LASSO Regression 
+
+predictor_vars <- c("num_tests", "ethnicity", "race", "politicalid", "att_family", "att_carerr",
+                     "age", "edu", "birthSex")
+response_var <- as.vector(genderdata$score)
+
+X <- as.matrix(genderdata[, predictor_vars])  # Predictor matrix
+Y <- response_var  # Response variable
+
+# Perform Lasso regression
+lasso_model <- glmnet(X, Y, alpha = 1)  # alpha = 1 for Lasso regression
+
+# Plot the cross-validated mean squared error (CV MSE) vs lambda
+plot(lasso_model)
+
+# Select lambda with minimum CV MSE
+best_lambda <- cv.glmnet(X, Y, alpha = 1)$lambda.min
+
+# Refit the model with the selected lambda
+lasso_model_best <- glmnet(X, Y, alpha = 1, lambda = best_lambda)
+
+# Make predictions
+predictions <- predict(lasso_model_best, newx = X)
+
+# Calculate MSE
+mse <- mean((predictions - Y)^2)
+
+# Print MSE
+print(paste("Mean Squared Error (MSE):", mse))
+
+# Print the coefficients
+print(coef(lasso_model_best))
+```
+
+```{r}
+#LASSO Regression 2
+#predictor_vars <- c('num_tests', 'ethnicity', 'race', 'politicalid', 'skintone_preference', 'warmth_dark',
+                #'warmth_light', 'age', 'edu', 'birthSex')
+
+X <- as.matrix(genderdata[, predictor_vars])  # Predictor matrix
+Y <- genderdata$score  # Response variable
+
+# Create a grid of lambda values for cross-validation
+lambda_grid <- 10^seq(10, -2, length = 100)
+
+# Perform cross-validated Lasso regression
+lasso_model_cv <- cv.glmnet(X, Y, alpha = 1, lambda = lambda_grid, nfolds = 10)
+
+# Plot mean squared error (MSE) vs lambda
+plot(lasso_model_cv)
+
+# Select lambda with minimum MSE
+best_lambda <- lasso_model_cv$lambda.min
+
+# Refit the model with the selected lambda
+lasso_model_best <- glmnet(X, Y, alpha = 1, lambda = best_lambda)
+
+# Make predictions
+predictions <- predict(lasso_model_best, newx = X)
+
+# Calculate MSE
+mse <- mean((predictions - Y)^2)
+
+# Print MSE
+print(paste('Mean Squared Error (MSE):', mse))
+
+# Print the coefficients
+print(coef(lasso_model_best))
+
+print(best_lambda)
 ```
 
 
@@ -368,7 +456,7 @@ sexualitydata <- read_sav("/Users/gracelock/Downloads/Sexuality IAT.public.2023.
 ```
 
 ```{r}
-sexualitydata |> select("session_id", "birthyear", "num_002", "birthSex", "ethnicityomb",
+sexualitydata |> select("session_id", "birthyear", "num_002", "birthSex", "ethnicityomb", "edu",
                      "raceomb_002", "D_biep.Straight_Good_all", "Tgayleswomen", "Tgaymen", "Tstraightmen",
                      "politicalid_7") |>
                 na.omit("D_biep.Straight_Good_all") |>
@@ -377,13 +465,84 @@ sexualitydata |> select("session_id", "birthyear", "num_002", "birthSex", "ethni
                 rename("num_tests" = "num_002",
                       "ethnicity" = "ethnicityomb",
                       "race" = "raceomb_002",
-                      
+                      "politicalid" = "politicalid_7",
                       "score" = "D_biep.Straight_Good_all",
                       "warmth_gayleswomen" = "Tgayleswomen",
                       "warmth_gaymen" = "Tgaymen",
                       "warmth_straightmen" = "Tstraightmen") -> sexualitydata
+```
 
-sexualitydata
+```{r}
+#LASSO Regression 
+
+predictor_vars <- c("num_tests", "ethnicity", "race", "politicalid", "warmth_gayleswomen", "warmth_gaymen",
+                     "warmth_straightmen", "age", "edu", "birthSex")
+response_var <- as.vector(sexualitydata$score)
+
+X <- as.matrix(sexualitydata[, predictor_vars])  # Predictor matrix
+Y <- response_var  # Response variable
+
+# Perform Lasso regression
+lasso_model <- glmnet(X, Y, alpha = 1)  # alpha = 1 for Lasso regression
+
+# Plot the cross-validated mean squared error (CV MSE) vs lambda
+plot(lasso_model)
+
+# Select lambda with minimum CV MSE
+best_lambda <- cv.glmnet(X, Y, alpha = 1)$lambda.min
+
+# Refit the model with the selected lambda
+lasso_model_best <- glmnet(X, Y, alpha = 1, lambda = best_lambda)
+
+# Make predictions
+predictions <- predict(lasso_model_best, newx = X)
+
+# Calculate MSE
+mse <- mean((predictions - Y)^2)
+
+# Print MSE
+print(paste("Mean Squared Error (MSE):", mse))
+
+# Print the coefficients
+print(coef(lasso_model_best))
+```
+
+```{r}
+#LASSO Regression 2
+#predictor_vars <- c('num_tests', 'ethnicity', 'race', 'politicalid', 'skintone_preference', 'warmth_dark',
+                #'warmth_light', 'age', 'edu', 'birthSex')
+
+X <- as.matrix(sexualitydata[, predictor_vars])  # Predictor matrix
+Y <- sexualitydata$score  # Response variable
+
+# Create a grid of lambda values for cross-validation
+lambda_grid <- 10^seq(10, -2, length = 100)
+
+# Perform cross-validated Lasso regression
+lasso_model_cv <- cv.glmnet(X, Y, alpha = 1, lambda = lambda_grid, nfolds = 10)
+
+# Plot mean squared error (MSE) vs lambda
+plot(lasso_model_cv)
+
+# Select lambda with minimum MSE
+best_lambda <- lasso_model_cv$lambda.min
+
+# Refit the model with the selected lambda
+lasso_model_best <- glmnet(X, Y, alpha = 1, lambda = best_lambda)
+
+# Make predictions
+predictions <- predict(lasso_model_best, newx = X)
+
+# Calculate MSE
+mse <- mean((predictions - Y)^2)
+
+# Print MSE
+print(paste('Mean Squared Error (MSE):', mse))
+
+# Print the coefficients
+print(coef(lasso_model_best))
+
+print(best_lambda)
 ```
 
 
@@ -394,7 +553,7 @@ weightdata <- read_sav("/Users/gracelock/Downloads/Weight IAT.public.2023.sav")
 ```
 
 ```{r}
-weightdata |> select("session_id", "birthyear", "num_002", "birthSex", "ethnicityomb",
+weightdata |> select("session_id", "birthyear", "num_002", "birthSex", "ethnicityomb", "edu", "politicalid_7",
                      "raceomb_002", "D_biep.Thin_Good_all", "att7", "tthin", "tfat", "comptomost_001") |>
               na.omit("D_biep.Thin_Good_all") |>
               mutate(age = 2024-birthyear) |> 
@@ -406,18 +565,85 @@ weightdata |> select("session_id", "birthyear", "num_002", "birthSex", "ethnicit
                       "body_preference" = "att7",
                       "warmth_thin" = "tthin",
                       "warmth_fat" = "tfat",
-                      "comptomost" = "comptomost_001") -> weightdata
+                      "comptomost" = "comptomost_001",
+                      "politicalid" = "politicalid_7") -> weightdata
 
 #comptomost: 1 "Much thinner" 2 "Moderately thinner" 3 "Slightly thinner" 4 "About the same" 5 "Slightly heavier" 6 "Moderately heavier" 7 "Much heavier"
-
-weightdata
 ```
 
+```{r}
+#LASSO Regression 
 
-GenderIdentity: 
-  - look how many people in each data set that selected multiple gender identities 
-  - combine people who selected multiple categories into one group 
-  - exclude these people since if it is a small group 
+predictor_vars <- c("num_tests", "ethnicity", "race", "politicalid", "warmth_thin", "warmth_fat",
+                     "comptomost", "age", "edu", "birthSex")
+response_var <- as.vector(weightdata$score)
+
+X <- as.matrix(weightdata[, predictor_vars])  # Predictor matrix
+Y <- response_var  # Response variable
+
+# Perform Lasso regression
+lasso_model <- glmnet(X, Y, alpha = 1)  # alpha = 1 for Lasso regression
+
+# Plot the cross-validated mean squared error (CV MSE) vs lambda
+plot(lasso_model)
+
+# Select lambda with minimum CV MSE
+best_lambda <- cv.glmnet(X, Y, alpha = 1)$lambda.min
+
+# Refit the model with the selected lambda
+lasso_model_best <- glmnet(X, Y, alpha = 1, lambda = best_lambda)
+
+# Make predictions
+predictions <- predict(lasso_model_best, newx = X)
+
+# Calculate MSE
+mse <- mean((predictions - Y)^2)
+
+# Print MSE
+print(paste("Mean Squared Error (MSE):", mse))
+
+# Print the coefficients
+print(coef(lasso_model_best))
+```
+
+```{r}
+#LASSO Regression 2
+#predictor_vars <- c('num_tests', 'ethnicity', 'race', 'politicalid', 'skintone_preference', 'warmth_dark',
+                #'warmth_light', 'age', 'edu', 'birthSex')
+
+X <- as.matrix(weightdata[, predictor_vars])  # Predictor matrix
+Y <- weightdata$score  # Response variable
+
+# Create a grid of lambda values for cross-validation
+lambda_grid <- 10^seq(10, -2, length = 100)
+
+# Perform cross-validated Lasso regression
+lasso_model_cv <- cv.glmnet(X, Y, alpha = 1, lambda = lambda_grid, nfolds = 10)
+
+# Plot mean squared error (MSE) vs lambda
+plot(lasso_model_cv)
+
+# Select lambda with minimum MSE
+best_lambda <- lasso_model_cv$lambda.min
+
+# Refit the model with the selected lambda
+lasso_model_best <- glmnet(X, Y, alpha = 1, lambda = best_lambda)
+
+# Make predictions
+predictions <- predict(lasso_model_best, newx = X)
+
+# Calculate MSE
+mse <- mean((predictions - Y)^2)
+
+# Print MSE
+print(paste('Mean Squared Error (MSE):', mse))
+
+# Print the coefficients
+print(coef(lasso_model_best))
+
+print(best_lambda)
+```
+
 
 ### Citations
 
