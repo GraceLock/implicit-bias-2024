@@ -18,6 +18,7 @@ library(glmnet) #Lasso Regression
 library(nnet) #Multinomial Logistic Regression
 library(pROC) #ROC Visualization (logistic regression)
 library(rpart) #Regression Tree
+library(leaps) #Best subset regression
 ```
 
 
@@ -172,6 +173,15 @@ skintonedata |>
 ```
 
 ```{r}
+#Score Distributions 
+
+#politicalid: 1 "strongly conservative" 2 "moderately conservative" 3 "slightly conservative" 4 "neutral" 5 "slightly liberal" 6 "moderately liberal" 7 "strongly liberal"
+
+2
+```
+
+
+```{r}
 #LASSO Regression 
 
 predictor_vars <- c("num_tests", "ethnicity", "race", "politicalid", "skintone_preference", "warmth_dark",
@@ -253,13 +263,135 @@ print(best_lambda)
 
 ```
 
+
+```{r}
+#Dot Plot 
+library(reshape2)
+df <- data.frame(
+  Row = c("Sex", "Education", "Political Identity", "Age", "Race", "Ethnicity", "Number of Tests", 
+                  "Warmth 1", "Warmth 2", "Warmth 3"),
+  Skintone = c(0, 1, 1, 1, 0, 1, 1, 0, 0, 1),
+  Weight = c(1, 0, 1, 1, 0, 0, 1, 1, 1, 1),
+  Gender = c(1, 0, 1, 1, 0, 0, 1, 1, 1, 1),
+  Sexuality = c(1, 0, 1, 1, 1, 0, 1, 1, 1, 1)
+)
+
+data_long <- melt(df, id.vars = "Row", variable.name = "Category", value.name = "Value")
+data_long$Row <- factor(data_long$Row, levels = c("Political Identity", "Number of Tests", "Age", "Warmth 3",
+                                                  "Warmth 2", "Warmth 1", "Sex", "Race", "Ethnicity", "Education"))
+
+data_long |> 
+  ggplot() + 
+  aes(x = Category, y = Row, color = as.factor(Value)) + 
+  geom_point(size = 5) +
+  scale_color_manual(values = c("red", "green"), labels = c("No", "Yes")) +
+  labs(title = "LASSO Regression Variable Selection",
+       x = "Bias Type",
+       y = "Predictors",
+       color = "Variable was selected:",
+       caption = "Warmth 1, 3, and 3 represent how warm or cold a participant feels towards the groups\nof people in that bias test. See __ for more specifics on the warmth questions for each test.") +
+  theme_minimal() +
+  theme(legend.position = "bottom") 
+```
+
+```{r}
+#Multiple linear regression 
+
+predictor_vars <- c("num_tests", "ethnicity", "politicalid", "skintone_preference",
+                    "warmth_light", "age", "edu", "birthSex")
+
+# Set seed for reproducibility (allows for the same random split when rerunning)
+set.seed(123)
+
+# Generate indices for train and test data
+train_indices <- sample(1:nrow(skintonedata), 0.8 * nrow(skintonedata))  # 80% for training
+test_indices <- setdiff(1:nrow(skintonedata), train_indices)  # Remaining for testing
+
+# Create training and test data frames
+train_data <- skintonedata[train_indices, ]
+test_data <- skintonedata[test_indices, ]
+
+train_data <- train_data[, c(predictor_vars, "score")]
+test_data <- test_data[, c(predictor_vars, "score")]
+
+#Model
+model <- lm(score ~ num_tests + ethnicity + politicalid+skintone_preference+
+                    warmth_light+age+edu+birthSex, data = train_data)
+
+# Summary of the model
+summary(model)
+
+# Predictions
+predictions <- predict(model, test_data)
+
+# Visualize actual vs predicted values
+plot(test_data$score, predictions, xlab = "Actual", ylab = "Predicted", main = "Actual vs Predicted")
+abline(0, 1, col = "red")  # add a 45-degree line for comparison
+```
+
+```{r}
+#Best Subset Selection 1
+
+# Perform best subset selection
+subset_model <- regsubsets(score ~ num_tests + ethnicity + politicalid + skintone_preference +
+                    warmth_light + age + edu + birthSex, data = skintonedata, nvmax = 6)
+
+# Get the best model based on adjusted R-squared
+best_model <- which.max(summary(subset_model)$adjr2)
+
+# Summary of the best model
+summary(subset_model, id = best_model)
+```
+
+```{r}
+#Best Subset Selection 2
+
+# Perform best subset selection
+subset_model <- regsubsets(score ~ num_tests + ethnicity + politicalid + skintone_preference +
+                    warmth_light + age + edu + birthSex, data = skintonedata, nvmax = 4)
+
+# Get the best model based on adjusted R-squared
+best_model <- which.max(summary(subset_model)$adjr2)
+
+# Summary of the best model
+summary(subset_model, id = best_model)
+```
+
+```{r}
+#Best Subset Selection 3
+
+# Perform best subset selection
+subset_model <- regsubsets(score ~ num_tests + ethnicity + politicalid + skintone_preference +
+                    warmth_light + age + edu + birthSex, data = skintonedata, nvmax = 3)
+
+# Get the best model based on adjusted R-squared
+best_model <- which.max(summary(subset_model)$adjr2)
+
+# Summary of the best model
+summary(subset_model, id = best_model)
+```
+
+```{r}
+#Best Subset Selection 4
+
+# Perform best subset selection
+subset_model <- regsubsets(score ~ num_tests + ethnicity + politicalid + skintone_preference +
+                    warmth_light + age + edu + birthSex, data = skintonedata, nvmax = 8)
+
+# Get the best model based on adjusted R-squared
+best_model <- which.max(summary(subset_model)$adjr2)
+
+# Summary of the best model
+summary(subset_model, id = best_model)
+```
+
 ```{r}
 #Logistic Regression - create categories
 
 #create categories in score variable (no bias, moderate bias, strong bias)
 
 # Define the breaks for creating three categories
-breaks <- c(-Inf, -0.0001, 0.0001, 0.25, 0.75, Inf)
+breaks <- c(-Inf, -0.0001, 0.0001, 0.33, 0.66, Inf)
 
 # Create a new categorical variable based on the breaks
 skintonedata$scorecat <- cut(skintonedata$score, breaks = breaks, labels = c("Opposite", "None", "Low", "Medium", "High"))
@@ -282,22 +414,88 @@ test_indices <- setdiff(1:nrow(skintonedata), train_indices)  # Remaining for te
 train_data <- skintonedata[train_indices, ]
 test_data <- skintonedata[test_indices, ]
 
-train_data <- train_data[, c(predictor_vars, "scorecat")]
-test_data <- test_data[, c(predictor_vars, "scorecat")]
+#train_data <- train_data[, c(predictor_vars, "scorecat")]
+#test_data <- test_data[, c(predictor_vars, "scorecat")]
 ```
 
 ```{r}
-#Logistic regression
+#Logistic regression (og)
 
-predictor_vars <- c("num_tests", "ethnicity", "politicalid", "skintone_preference",
+predictor_vars0 <- c("num_tests", "ethnicity", "politicalid", "skintone_preference",
                     "warmth_light", "age", "edu", "birthSex")
 
+train_data0 <- train_data[, c(predictor_vars0, "scorecat")]
+test_data0 <- test_data[, c(predictor_vars0, "scorecat")]
+
 # Fit multinomial logistic regression model
-multinom_model <- multinom(scorecat ~ ., data = train_data)
+multinom_model0 <- multinom(scorecat ~ ., data = train_data0)
 
 # Print summary of the model
-summary(multinom_model)
+summary(multinom_model0)
 ```
+
+```{r}
+#Logistic Regression bestsubset regression 1
+
+predictor_vars1 <- c("num_tests", "ethnicity", "politicalid", "skintone_preference",
+                    "age", "edu")
+
+train_data1 <- train_data[, c(predictor_vars1, "scorecat")]
+test_data1 <- test_data[, c(predictor_vars1, "scorecat")]
+
+# Fit multinomial logistic regression model
+multinom_model1 <- multinom(scorecat ~ ., data = train_data1)
+
+# Print summary of the model
+summary(multinom_model1)
+```
+
+```{r}
+#Logistic Regression bestsubset regression 2
+
+predictor_vars2 <- c("num_tests", "politicalid", "skintone_preference", "age")
+
+train_data2 <- train_data[, c(predictor_vars2, "scorecat")]
+test_data2 <- test_data[, c(predictor_vars2, "scorecat")]
+
+# Fit multinomial logistic regression model
+multinom_model2 <- multinom(scorecat ~ ., data = train_data2)
+
+# Print summary of the model
+summary(multinom_model2)
+```
+
+```{r}
+#Logistic Regression best subset regression 3
+
+predictor_vars3 <- c("num_tests", "skintone_preference", "age")
+
+train_data3 <- train_data[, c(predictor_vars3, "scorecat")]
+test_data3 <- test_data[, c(predictor_vars3, "scorecat")]
+
+# Fit multinomial logistic regression model
+multinom_model3 <- multinom(scorecat ~ ., data = train_data3)
+
+# Print summary of the model
+summary(multinom_model3)
+```
+
+```{r}
+#Logistic Regression best subset regression 4
+
+predictor_vars4 <- c("num_tests", "ethnicity", "politicalid", "skintone_preference",
+                    "warmth_light", "age", "edu", "birthSex")
+
+train_data4 <- train_data[, c(predictor_vars4, "scorecat")]
+test_data4 <- test_data[, c(predictor_vars4, "scorecat")]
+
+# Fit multinomial logistic regression model
+multinom_model4 <- multinom(scorecat ~ ., data = train_data4)
+
+# Print summary of the model
+summary(multinom_model4)
+```
+
 
 ```{r}
 #Logistic Regression Visual 
