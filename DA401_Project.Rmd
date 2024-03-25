@@ -19,6 +19,7 @@ library(nnet) #Multinomial Logistic Regression
 library(pROC) #ROC Visualization (logistic regression)
 library(rpart) #Regression Tree
 library(leaps) #Best subset regression
+library(MASS) #Multiordinal logistic regression
 ```
 
 
@@ -329,12 +330,12 @@ plot(test_data$score, predictions, xlab = "Actual", ylab = "Predicted", main = "
 abline(0, 1, col = "red")  # add a 45-degree line for comparison
 ```
 
-```{r}
+```{r, fig.height=}
 #Best Subset Selection 1
 
 # Perform best subset selection
 subset_model <- regsubsets(score ~ num_tests + ethnicity + politicalid + skintone_preference +
-                    warmth_light + age + edu + birthSex, data = skintonedata, nvmax = 6)
+                    warmth_light + age + edu + birthSex + race + warmth_dark, data = skintonedata, nvmax = 6)
 
 # Get the best model based on adjusted R-squared
 best_model <- which.max(summary(subset_model)$adjr2)
@@ -348,7 +349,7 @@ summary(subset_model, id = best_model)
 
 # Perform best subset selection
 subset_model <- regsubsets(score ~ num_tests + ethnicity + politicalid + skintone_preference +
-                    warmth_light + age + edu + birthSex, data = skintonedata, nvmax = 4)
+                    warmth_light + age + edu + birthSex + race + warmth_dark, data = skintonedata, nvmax = 4)
 
 # Get the best model based on adjusted R-squared
 best_model <- which.max(summary(subset_model)$adjr2)
@@ -362,7 +363,7 @@ summary(subset_model, id = best_model)
 
 # Perform best subset selection
 subset_model <- regsubsets(score ~ num_tests + ethnicity + politicalid + skintone_preference +
-                    warmth_light + age + edu + birthSex, data = skintonedata, nvmax = 3)
+                    warmth_light + age + edu + birthSex + race + warmth_dark, data = skintonedata, nvmax = 3)
 
 # Get the best model based on adjusted R-squared
 best_model <- which.max(summary(subset_model)$adjr2)
@@ -376,7 +377,7 @@ summary(subset_model, id = best_model)
 
 # Perform best subset selection
 subset_model <- regsubsets(score ~ num_tests + ethnicity + politicalid + skintone_preference +
-                    warmth_light + age + edu + birthSex, data = skintonedata, nvmax = 8)
+                    warmth_light + age + edu + birthSex + race + warmth_dark, data = skintonedata, nvmax = 8)
 
 # Get the best model based on adjusted R-squared
 best_model <- which.max(summary(subset_model)$adjr2)
@@ -384,6 +385,96 @@ best_model <- which.max(summary(subset_model)$adjr2)
 # Summary of the best model
 summary(subset_model, id = best_model)
 ```
+
+```{r}
+#Best Subset Selection Visual 
+
+selections_df <- data.frame(
+  nvmax = c(8, 6, 4, 3),
+  num_tests = c(1, 1, 1, 1),
+  age = c(1, 1, 1, 1),
+  skintone_preference = c(1, 1, 1, 1),
+  politicalid = c(1, 1, 1, 0),
+  ethnicity = c(1, 1, 0, 0),
+  edu = c(1, 1, 0, 0),
+  warmth_light = c(1, 0, 0, 0),
+  birthSex = c(1, 0, 0, 0),
+  race = c(0, 0, 0, 0),
+  warmth_dark = c(0, 0, 0, 0)
+)
+
+data_longer <- melt(selections_df, id.vars = "nvmax", variable.name = "Category", value.name = "Value")
+#data_long$Row <- factor(data_long$Row, levels = c("Political Identity", "Number of Tests", "Age", "Warmth 3",
+#                                                 "Warmth 2", "Warmth 1", "Sex", "Race", "Ethnicity", "Education"))
+
+data_longer |> 
+  ggplot() + 
+  aes(x = Category, y = nvmax, color = as.factor(Value)) + 
+  geom_point(size = 5) +
+  scale_color_manual(values = c("red", "green"), labels = c("No", "Yes")) +
+  labs(title = "Best Subset Selection: Skintone Data",
+       x = "Predictors",
+       y = "Number of predictors to select",
+       color = "Variable was selected:") +
+  theme_minimal() +
+  theme(legend.position = "bottom") +
+  theme(
+    axis.text.x = element_text(angle = 25, hjust = 1)
+  )
+```
+
+```{r}
+#Multiple Linear Regressions
+
+predictor_vars <- c("num_tests", "ethnicity", "politicalid", "skintone_preference",
+                    "warmth_light", "age", "edu", "birthSex")
+
+# Set seed for reproducibility (allows for the same random split when rerunning)
+set.seed(123)
+
+# Generate indices for train and test data
+train_indices <- sample(1:nrow(skintonedata), 0.8 * nrow(skintonedata))  # 80% for training
+test_indices <- setdiff(1:nrow(skintonedata), train_indices)  # Remaining for testing
+
+# Create training and test data frames
+train_data <- skintonedata[train_indices, ]
+test_data <- skintonedata[test_indices, ]
+
+train_data <- train_data[, c(predictor_vars, "score")]
+test_data <- test_data[, c(predictor_vars, "score")]
+
+#Models
+model8 <- lm(score ~ num_tests + ethnicity + politicalid+skintone_preference+
+                    warmth_light+age+edu+birthSex, data = train_data)
+model6 <- lm(score ~ num_tests + ethnicity + politicalid+skintone_preference+age+edu, data = train_data)
+model4 <- lm(score ~ num_tests + politicalid+skintone_preference+age, data = train_data)
+model3 <- lm(score ~ num_tests +skintone_preference+age, data = train_data)
+
+# Summary of the model
+summary(model8) #0.07529
+summary(model6) #0.0751
+summary(model4) #0.07367
+summary(model3) #0.06924
+
+# Predictions
+predictions <- predict(model3, test_data)
+
+# Visualize actual vs predicted values
+plot(test_data$score, predictions, xlab = "Actual", ylab = "Predicted", main = "Actual vs Predicted")
+abline(0, 1, col = "red")  # add a 45-degree line for comparison
+```
+
+```{r}
+#Multi ordinal logistic regression 
+
+# Fit ordinal logistic regression model
+ord_model <- polr(scorecat ~ num_tests + ethnicity + politicalid+skintone_preference+
+                    warmth_light+age+edu+birthSex, data = skintonedata)
+
+# Summarize the model
+summary(model)
+```
+
 
 ```{r}
 #Logistic Regression - create categories
@@ -435,7 +526,7 @@ summary(multinom_model0)
 ```
 
 ```{r}
-#Logistic Regression bestsubset regression 1
+#Logistic Regression best subset regression 1
 
 predictor_vars1 <- c("num_tests", "ethnicity", "politicalid", "skintone_preference",
                     "age", "edu")
@@ -451,7 +542,7 @@ summary(multinom_model1)
 ```
 
 ```{r}
-#Logistic Regression bestsubset regression 2
+#Logistic Regression best subset regression 2
 
 predictor_vars2 <- c("num_tests", "politicalid", "skintone_preference", "age")
 
@@ -532,7 +623,7 @@ This visualization provides insights into the distribution of log loss values, w
 
 The log loss is defined as the negative natural logarithm of the predicted probability assigned to the true class. This value is commonly used as a measure of the accuracy of predicted probabilities in classification tasks.
 
-```{r, fig.width=11, fig.height=6}
+```{r}
 #Regression Tree 
 
 predictor_vars <- c("num_tests", "ethnicity", "race", "politicalid", "skintone_preference", "warmth_dark",
