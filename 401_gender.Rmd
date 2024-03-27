@@ -1,0 +1,179 @@
+---
+title: "401_gender"
+author: "Grace Lock"
+date: "2024-03-27"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(haven) #Reading in the data
+library(dplyr)
+library(tidyverse)
+library(socsci) #Helps with data manipulation
+library(glmnet) #Lasso Regression
+library(nnet) #Multinomial Logistic Regression
+library(rpart) #Regression Tree
+library(leaps) #Best subset regression
+```
+
+
+### Gender data 
+
+```{r}
+genderdata <- read_sav("/Users/gracelock/Downloads/Gender-Career IAT.public.2023.sav")
+```
+
+```{r}
+genderdata |> select("session_id", "birthyear", "num_002", "birthSex", "ethnicityomb", "edu",
+                     "raceomb_002", "D_biep.Male_Career_all", "impcareer", "impfamily", "politicalid_7") |> 
+              na.omit("D_biep.Male_Career_all") |>
+              rename("num_tests" = "num_002",
+                     "ethnicity" = "ethnicityomb",
+                     "race" = "raceomb_002",
+                     "politicalid" = "politicalid_7",
+                     "score" = "D_biep.Male_Career_all",
+                     "att_family" = "impfamily",
+                     "att_carerr" = "impcareer") |>
+              mutate(age = 2024 - birthyear) |> 
+              select(-birthyear) -> genderdata
+```
+
+```{r}
+#LASSO Regression 
+
+predictor_vars <- c("num_tests", "ethnicity", "race", "politicalid", "att_family", "att_carerr",
+                     "age", "edu", "birthSex")
+response_var <- as.vector(genderdata$score)
+
+X <- as.matrix(genderdata[, predictor_vars])  # Predictor matrix
+Y <- response_var  # Response variable
+
+# Perform Lasso regression
+lasso_model <- glmnet(X, Y, alpha = 1)  # alpha = 1 for Lasso regression
+
+# Plot the cross-validated mean squared error (CV MSE) vs lambda
+plot(lasso_model)
+
+# Select lambda with minimum CV MSE
+best_lambda <- cv.glmnet(X, Y, alpha = 1)$lambda.min
+
+# Refit the model with the selected lambda
+lasso_model_best <- glmnet(X, Y, alpha = 1, lambda = best_lambda)
+
+# Make predictions
+predictions <- predict(lasso_model_best, newx = X)
+
+# Calculate MSE
+mse <- mean((predictions - Y)^2)
+
+# Print MSE
+print(paste("Mean Squared Error (MSE):", mse))
+
+# Print the coefficients
+print(coef(lasso_model_best))
+```
+
+```{r}
+#LASSO Regression 2
+#predictor_vars <- c('num_tests', 'ethnicity', 'race', 'politicalid', 'skintone_preference', 'warmth_dark',
+                #'warmth_light', 'age', 'edu', 'birthSex')
+
+X <- as.matrix(genderdata[, predictor_vars])  # Predictor matrix
+Y <- genderdata$score  # Response variable
+
+# Create a grid of lambda values for cross-validation
+lambda_grid <- 10^seq(10, -2, length = 100)
+
+# Perform cross-validated Lasso regression
+lasso_model_cv <- cv.glmnet(X, Y, alpha = 1, lambda = lambda_grid, nfolds = 10)
+
+# Plot mean squared error (MSE) vs lambda
+plot(lasso_model_cv)
+
+# Select lambda with minimum MSE
+best_lambda <- lasso_model_cv$lambda.min
+
+# Refit the model with the selected lambda
+lasso_model_best <- glmnet(X, Y, alpha = 1, lambda = best_lambda)
+
+# Make predictions
+predictions <- predict(lasso_model_best, newx = X)
+
+# Calculate MSE
+mse <- mean((predictions - Y)^2)
+
+# Print MSE
+print(paste('Mean Squared Error (MSE):', mse))
+
+# Print the coefficients
+print(coef(lasso_model_best))
+
+print(best_lambda)
+```
+
+```{r}
+#Best subset selection 1 
+
+# Perform best subset selection
+subset_model <- regsubsets(score ~ num_tests + ethnicity + politicalid
+                           + age + edu + birthSex + race + att_family + att_carerr, 
+                           data = genderdata, nvmax = 8)
+
+# Get the best model based on adjusted R-squared
+best_model <- which.max(summary(subset_model)$adjr2)
+
+# Summary of the best model
+summary(subset_model, id = best_model)
+```
+
+```{r}
+#Best subset selection 2
+
+# Perform best subset selection
+subset_model <- regsubsets(score ~ num_tests + ethnicity + politicalid
+                           + age + edu + birthSex + race + att_family + att_carerr, 
+                           data = genderdata, nvmax = 6)
+
+# Get the best model based on adjusted R-squared
+best_model <- which.max(summary(subset_model)$adjr2)
+
+# Summary of the best model
+summary(subset_model, id = best_model)
+```
+
+```{r}
+#Best subset selection 3
+
+# Perform best subset selection
+subset_model <- regsubsets(score ~ num_tests + ethnicity + politicalid
+                           + age + edu + birthSex + race + att_family + att_carerr, 
+                           data = genderdata, nvmax = 4)
+
+# Get the best model based on adjusted R-squared
+best_model <- which.max(summary(subset_model)$adjr2)
+
+# Summary of the best model
+summary(subset_model, id = best_model)
+```
+
+```{r}
+#Best subset selection 4
+
+# Perform best subset selection
+subset_model <- regsubsets(score ~ num_tests + ethnicity + politicalid
+                           + age + edu + birthSex + race + att_family + att_carerr, 
+                           data = genderdata, nvmax = 3)
+
+# Get the best model based on adjusted R-squared
+best_model <- which.max(summary(subset_model)$adjr2)
+
+# Summary of the best model
+summary(subset_model, id = best_model)
+```
+
+
+
