@@ -18,6 +18,7 @@ library(glmnet) #Lasso Regression
 library(nnet) #Multinomial Logistic Regression
 library(rpart) #Regression Tree
 library(leaps) #Best subset regression
+library(MASS) #Ordinal logistic regression
 ```
 
 ### Sexuality data
@@ -27,12 +28,12 @@ sexualitydata <- read_sav("/Users/gracelock/Downloads/Sexuality IAT.public.2023.
 ```
 
 ```{r}
-sexualitydata |> select("session_id", "birthyear", "num_002", "birthSex", "ethnicityomb", "edu",
+sexualitydata |> dplyr::select("session_id", "birthyear", "num_002", "birthSex", "ethnicityomb", "edu",
                      "raceomb_002", "D_biep.Straight_Good_all", "Tgayleswomen", "Tgaymen", "Tstraightmen",
                      "politicalid_7") |>
                 na.omit("D_biep.Straight_Good_all") |>
                 mutate(age = 2024-birthyear) |> 
-                select(-birthyear) |> 
+                dplyr::select(-birthyear) |> 
                 rename("num_tests" = "num_002",
                       "ethnicity" = "ethnicityomb",
                       "race" = "raceomb_002",

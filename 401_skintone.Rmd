@@ -19,7 +19,7 @@ library(nnet) #Multinomial Logistic Regression
 #library(pROC) #ROC Visualization (logistic regression)
 library(rpart) #Regression Tree
 library(leaps) #Best subset regression
-#library(MASS) #Multiordinal logistic regression
+library(MASS) #Multiordinal logistic regression - messes with select function
 ```
 
 
@@ -28,7 +28,7 @@ library(leaps) #Best subset regression
 ```{r}
 skintonedata <- read_sav("/Users/gracelock/Downloads/Skin IAT.public.2023 2.sav")
 
-skintonedata |>  select("session_id", "birthyear", "birthSex", "politicalid_7",
+skintonedata |>  dplyr::select("session_id", "birthyear", "birthSex", "politicalid_7",
                                  "num_002", "ethnicityomb", "raceomb_002", "edu", "D_biep.LightSkin_Good_all", 
                                  "att7", "Tdark", "Tlight") |>
                  na.omit("D_biep.LightSkin_Good_all") |>
@@ -41,7 +41,7 @@ skintonedata |>  select("session_id", "birthyear", "birthSex", "politicalid_7",
                         "warmth_light" = "Tlight",
                         "score" = "D_biep.LightSkin_Good_all") |>
                  mutate(age = 2024 - birthyear) |>
-                 select(-birthyear) -> skintonedata
+                 dplyr::select(-birthyear) -> skintonedata
 
 #birthsex: 1 = male, 2 = female
 
@@ -54,131 +54,6 @@ skintonedata |>  select("session_id", "birthyear", "birthSex", "politicalid_7",
 #ethnicity:1 "Hispanic or Latino" 2 "Not Hispanic or Latino" 3 "Unknown"
 
 #politicalid: 1 "strongly conservative" 2 "moderately conservative" 3 "slightly conservative" 4 "neutral" 5 "slightly liberal" 6 "moderately liberal" 7 "strongly liberal"
-```
-
-```{r}
-#Population data 
-
-#Age
-skintonedata |> 
-  ggplot() + 
-  aes(
-    x = age
-  ) + 
-  geom_histogram()
-
-#Race
-skintonedata |> 
-  mutate(
-    race = case_when(
-      race %in% c(2, 3) ~ "Asian",
-      race == 5 ~ "Black or African American",
-      race == 6 ~ "White",
-      race %in% c(1, 4, 7) ~ "Other",
-      race == 8 ~ "Multiracial",
-    ) ) |>
-  ggplot() + 
-  aes(
-    x = race
-  ) + 
-  geom_bar() 
-
-#Number of tests
-skintonedata |> 
-  ggplot() + 
-  aes(
-    x = num_tests
-  ) + 
-  geom_histogram()
-
-#Political Identification
-skintonedata |> 
-  mutate(
-    politicalid = frcode(
-      politicalid == 1 ~ "strongly\nconservative",
-      politicalid == 2 ~ "moderately\nconservative",
-      politicalid == 3 ~ "slightly\nconservative",
-      politicalid == 4 ~ "neutral",
-      politicalid == 5 ~ "slightly\nliberal",
-      politicalid == 6 ~ "moderately\nliberal",
-      politicalid == 7 ~ "strongly\nliberal"
-    )
-  ) |>
-  ggplot() + 
-  aes(
-    x = politicalid
-  ) + 
-  geom_bar() +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1))
-
-#Education
-skintonedata |>
-  mutate(
-    edu = frcode(
-      edu %in% c(1, 2, 3) ~ "less than high school",
-      edu == 4 ~ "high school graduate",
-      edu == 5 ~ "some college",
-      edu == 6 ~ "associate's degree",
-      edu == 7 ~ "bachelor's degree",
-      edu %in% c(8, 9, 10, 11, 12, 13, 14) ~ "higher education"
-    )
-  ) |>
-  ggplot() + 
-  aes(
-    x = edu
-  ) + 
-  geom_bar()  +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1))
-
-#Sex
-skintonedata |> 
-  mutate(
-    birthSex = case_when(
-      birthSex == 1 ~ "Male",
-      birthSex == 2 ~ "Female"
-    )
-  ) |>
-  ggplot() +
-  aes(
-    x = birthSex
-  ) + 
-  geom_bar()
-
-#Skin tone Preference
-skintonedata |> 
-  mutate(
-    skintone_preference = frcode(
-      skintone_preference == 1 ~ "strongly prefer\nDark Skinned People",
-      skintone_preference == 2 ~ "moderately prefer\nDark Skinned People",
-      skintone_preference == 3 ~ "slightly prefer\nDark Skinned People",
-      skintone_preference == 4 ~ "I like Light Skinned People and\nDark\nSkinned People equally",
-      skintone_preference == 5 ~ "slightly prefer\nLight Skinned People",
-      skintone_preference == 6 ~ "moderately prefer\nLight Skinned People",
-      skintone_preference == 7 ~ "strongly prefer\nLight Skinned People"
-    )
-  ) |> 
-  ggplot() + 
-  aes(
-    x = skintone_preference
-  ) + 
-  geom_bar() +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1))
-
-#Score  
-skintonedata |> 
-  ggplot() + 
-  aes(
-    x = score
-  ) + 
-  geom_histogram()
-```
-
-```{r}
-#Score Distributions 
-
-#politicalid: 1 "strongly conservative" 2 "moderately conservative" 3 "slightly conservative" 4 "neutral" 5 "slightly liberal" 6 "moderately liberal" 7 "strongly liberal"
-
-2
 ```
 
 
@@ -464,20 +339,9 @@ plot(test_data$score, predictions, xlab = "Actual", ylab = "Predicted", main = "
 abline(0, 1, col = "red")  # add a 45-degree line for comparison
 ```
 
-```{r}
-#Multi ordinal logistic regression 
-
-# Fit ordinal logistic regression model
-ord_model <- polr(scorecat ~ num_tests + ethnicity + politicalid+skintone_preference+
-                    warmth_light+age+edu+birthSex, data = skintonedata)
-
-# Summarize the model
-summary(model)
-```
-
 
 ```{r}
-#Logistic Regression - create categories
+#Create categories
 
 #create categories in score variable (no bias, moderate bias, strong bias)
 
@@ -490,6 +354,50 @@ skintonedata$scorecat <- cut(skintonedata$score, breaks = breaks, labels = c("Op
 # Print the summary of the new categorical variable
 summary(skintonedata$scorecat)
 ```
+
+```{r}
+#Multi ordinal logistic regression 
+
+# Fit ordinal logistic regression model
+ord_model <- polr(scorecat ~ num_tests + ethnicity + politicalid + skintone_preference +
+                    warmth_light + age + edu + birthSex, data = skintonedata, Hess = TRUE)
+
+# Summarize the model
+summary(ord_model)
+```
+
+```{r}
+#table 
+
+ctable <- coef(summary(ord_model))
+```
+
+```{r}
+#calculate and store p values
+p <- pnorm(abs(ctable[, "t value"]), lower.tail = FALSE) * 2
+
+## combined table
+(ctable <- cbind(ctable, "p value" = p))
+```
+
+```{r}
+#Confidence intervals 
+
+ci <- confint(ord_model)
+ci
+```
+
+The 95% confidence intervals do not cross 0 so therefor they are significant - though they are very close to 0. 
+
+```{r}
+#Odds Ratio and confidence intervals 
+
+exp(cbind(OR = coef(ord_model), ci))
+```
+
+For every one unit increase in number of tests taken, the odds of being more bias is multiplied .85 times, holding constant all other variables. 
+For every one unit increase in ethnicity, the odds of being more bias is multiplied 1.12 times or increases 12%, holding constant all other variables. 
+The odds ratio is greatest for skintone_preference showing that this has the greatest impact which is in line with other models. 
 
 ```{r}
 #Training and Test Data 
