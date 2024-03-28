@@ -176,5 +176,93 @@ best_model <- which.max(summary(subset_model)$adjr2)
 summary(subset_model, id = best_model)
 ```
 
+```{r}
+#Create categories
+
+#create categories in score variable (no bias, moderate bias, strong bias)
+
+# Define the breaks for creating three categories
+breaks <- c(-Inf, -0.0001, 0.0001, 0.33, 0.66, Inf)
+
+# Create a new categorical variable based on the breaks
+genderdata$scorecat <- cut(genderdata$score, breaks = breaks, labels = c("Opposite", "None", "Low", "Medium", "High"))
+
+# Print the summary of the new categorical variable
+summary(genderdata$scorecat)
+```
+
+```{r}
+#Multi ordinal logistic regression 
+
+# Fit ordinal logistic regression model
+ord_model <- polr(scorecat ~ num_tests + ethnicity + politicalid
+                           + age + edu + birthSex + race + att_family + att_carerr, 
+                  data = genderdata, Hess = TRUE)
+
+# Summarize the model
+summary(ord_model)
+```
+
+```{r}
+#table 
+
+ctable <- coef(summary(ord_model))
+```
+
+```{r}
+#calculate and store p values
+p <- pnorm(abs(ctable[, "t value"]), lower.tail = FALSE) * 2
+
+## combined table
+ctable <- cbind(ctable, "p value" = p)
+```
+
+```{r}
+#Confidence intervals 
+
+ci <- confint(ord_model)
+ci
+```
+
+```{r}
+#Odds Ratio and confidence intervals 
+
+exp(cbind(OR = coef(ord_model), ci))
+```
+
+```{r}
+#Training and Test Data 
+
+# Set seed for reproducibility (allows for the same random split when rerunning)
+set.seed(123)
+
+# Generate indices for train and test data
+train_indices <- sample(1:nrow(genderdata), 0.8 * nrow(genderdata))  # 80% for training
+test_indices <- setdiff(1:nrow(genderdata), train_indices)  # Remaining for testing
+
+# Create training and test data frames
+train_data <- genderdata[train_indices, ]
+test_data <- genderdata[test_indices, ]
+```
+
+```{r}
+#Ordinal regression predictions 
+
+# Print summary of the model
+#summary(ord_model)
+
+# Predict classes
+predicted_classes <- predict(ord_model, newdata = test_data, type = "class")
+
+# Create confusion matrix
+conf_matrix <- table(test_data$scorecat, predicted_classes)
+
+# Print confusion matrix
+print(conf_matrix)
+```
+
+
+
+
 
 

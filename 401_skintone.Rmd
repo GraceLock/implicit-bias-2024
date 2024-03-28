@@ -418,6 +418,32 @@ test_data <- skintonedata[test_indices, ]
 ```
 
 ```{r}
+#Ordinal regression predictions 
+
+predictor_vars0 <- c("num_tests", "ethnicity", "politicalid", "skintone_preference",
+                    "warmth_light", "age", "edu", "birthSex")
+
+#train_data0 <- train_data[, c(predictor_vars0, "scorecat")]
+#test_data0 <- test_data[, c(predictor_vars0, "scorecat")]
+
+# Fit multinomial logistic regression model
+
+
+# Print summary of the model
+summary(ord_model)
+
+# Predict classes
+predicted_classes <- predict(ord_model, newdata = test_data, type = "class")
+
+# Create confusion matrix
+conf_matrix <- table(test_data$scorecat, predicted_classes)
+
+# Print confusion matrix
+print(conf_matrix)
+```
+
+
+```{r}
 #Logistic regression (og)
 
 predictor_vars0 <- c("num_tests", "ethnicity", "politicalid", "skintone_preference",
