@@ -196,20 +196,62 @@ summary(weightdata$scorecat)
 ```
 
 ```{r}
-#Multi ordinal logistic regression 
+#Multi ordinal logistic regression 1
 
 # Fit ordinal logistic regression model
-ord_model <- polr(scorecat ~ num_tests + ethnicity + politicalid + age + edu + 
+ord_model1 <- polr(scorecat ~ num_tests + politicalid + age + 
                            birthSex + race + warmth_thin + warmth_fat + comptomost, 
                   data = weightdata, Hess = TRUE)
 
 # Summarize the model
-summary(ord_model)
+summary(ord_model1)
 ```
 
 ```{r}
+#Multi ordinal logistic regression 2
+
+# Fit ordinal logistic regression model
+ord_model2 <- polr(scorecat ~ num_tests + politicalid + age + 
+                             + warmth_thin + warmth_fat + comptomost, 
+                  data = weightdata, Hess = TRUE)
+
+# Summarize the model
+summary(ord_model2)
+```
+
+```{r}
+#Multi ordinal logistic regression 3
+
+# Fit ordinal logistic regression model
+ord_model3 <- polr(scorecat ~ num_tests 
+                             + warmth_thin + warmth_fat + comptomost, 
+                  data = weightdata, Hess = TRUE)
+
+# Summarize the model
+summary(ord_model3)
+```
+
+```{r}
+#Multi ordinal logistic regression 4
+
+# Fit ordinal logistic regression model
+ord_model4 <- polr(scorecat ~ num_tests 
+                             + warmth_thin + warmth_fat, 
+                  data = weightdata, Hess = TRUE)
+
+# Summarize the model
+summary(ord_model4)
+```
+
+AICs: 123913.36, 123964.44, 124483.70, 124893.51
+Ord model 3 has the lowest AIC 
+Ord model 2 has the highest AIC
+
+The AIC penalizes models for their complexity, meaning that it takes into account both how well the model fits the data and how many parameters it has. Therefore, when comparing models using AIC, the model with the lowest AIC value is preferred because it achieves a good balance between goodness of fit and simplicity.
+
+```{r}
 #table 
-ctable <- coef(summary(ord_model))
+ctable <- coef(summary(ord_model3))
 ```
 
 ```{r}
@@ -217,18 +259,18 @@ ctable <- coef(summary(ord_model))
 p <- pnorm(abs(ctable[, "t value"]), lower.tail = FALSE) * 2
 
 ## combined table
-(ctable <- cbind(ctable, "p value" = p))
+ctable <- cbind(ctable, "p value" = p)
 ```
 
 ```{r}
 #Confidence intervals 
-ci <- confint(ord_model)
+ci <- confint(ord_model3)
 ci
 ```
 
 ```{r}
 #Odds Ratio and confidence intervals 
-exp(cbind(OR = coef(ord_model), ci))
+exp(cbind(OR = coef(ord_model3), ci))
 ```
 
 ```{r}
@@ -250,7 +292,7 @@ test_data <- weightdata[test_indices, ]
 #Ordinal regression predictions 
 
 # Predict classes
-predicted_classes <- predict(ord_model, newdata = test_data, type = "class")
+predicted_classes <- predict(ord_model3, newdata = test_data, type = "class")
 
 # Create confusion matrix
 conf_matrix <- table(test_data$scorecat, predicted_classes)
