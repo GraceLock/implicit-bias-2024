@@ -240,13 +240,25 @@ ord_model4 <- polr(scorecat ~ politicalid +
 summary(ord_model4)
 ```
 
-AICs: 115275.54, 115431.05, 116039.31, 116465.60
-Ord model 1 has the lowest AIC value. 
+```{r}
+#Multi ordinal logistic regression 5
+
+# Fit ordinal logistic regression model
+ord_model5 <- polr(scorecat ~ num_tests + politicalid + age + 
+                           birthSex + race + warmth_gayleswomen + warmth_gaymen + warmth_straightmen, 
+                  data = sexualitydata, Hess = TRUE)
+
+# Summarize the model
+summary(ord_model5)
+```
+
+AICs: 115275.54, 115431.05, 116039.31, 116465.60, 115251.54 (lasso)
+Ord model 5 has the lowest AIC value. 
 Ord model 4 has the highest AIC value. 
 
 ```{r}
 #table 
-ctable <- coef(summary(ord_model1))
+ctable <- coef(summary(ord_model5))
 
 #calculate and store p values
 p <- pnorm(abs(ctable[, "t value"]), lower.tail = FALSE) * 2
@@ -257,14 +269,13 @@ ctable <- cbind(ctable, "p value" = p)
 
 ```{r}
 #Confidence intervals 
-
-ci <- confint(ord_model1)
+ci <- confint(ord_model5)
 ci
 ```
 
 ```{r}
 #Odds Ratio and confidence intervals 
-exp(cbind(OR = coef(ord_model1), ci))
+exp(cbind(OR = coef(ord_model5), ci))
 ```
 
 ```{r}
@@ -286,7 +297,7 @@ test_data <- sexualitydata[test_indices, ]
 #Ordinal regression predictions 
 
 # Predict classes
-predicted_classes <- predict(ord_model1, newdata = test_data, type = "class")
+predicted_classes <- predict(ord_model5, newdata = test_data, type = "class")
 
 # Create confusion matrix
 conf_matrix <- table(test_data$scorecat, predicted_classes)

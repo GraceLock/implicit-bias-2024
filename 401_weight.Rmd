@@ -243,18 +243,28 @@ ord_model4 <- polr(scorecat ~ num_tests
 summary(ord_model4)
 ```
 
-AICs: 123913.36, 123964.44, 124483.70, 124893.51
-Ord model 3 has the lowest AIC 
+```{r}
+#Multi ordinal logistic regression 5
+
+# Fit ordinal logistic regression model
+ord_model5 <- polr(scorecat ~ num_tests + politicalid + age + 
+                           birthSex + warmth_thin + warmth_fat + comptomost, 
+                  data = weightdata, Hess = TRUE)
+
+# Summarize the model
+summary(ord_model5)
+```
+
+AICs: 123913.36, 123964.44, 124483.70, 124893.51, 123900.75 (lasso)
+Ord model 5 has the lowest AIC 
 Ord model 2 has the highest AIC
 
 The AIC penalizes models for their complexity, meaning that it takes into account both how well the model fits the data and how many parameters it has. Therefore, when comparing models using AIC, the model with the lowest AIC value is preferred because it achieves a good balance between goodness of fit and simplicity.
 
 ```{r}
 #table 
-ctable <- coef(summary(ord_model3))
-```
+ctable <- coef(summary(ord_model5))
 
-```{r}
 #calculate and store p values
 p <- pnorm(abs(ctable[, "t value"]), lower.tail = FALSE) * 2
 
@@ -264,13 +274,13 @@ ctable <- cbind(ctable, "p value" = p)
 
 ```{r}
 #Confidence intervals 
-ci <- confint(ord_model3)
+ci <- confint(ord_model5)
 ci
 ```
 
 ```{r}
 #Odds Ratio and confidence intervals 
-exp(cbind(OR = coef(ord_model3), ci))
+exp(cbind(OR = coef(ord_model5), ci))
 ```
 
 ```{r}
@@ -292,7 +302,7 @@ test_data <- weightdata[test_indices, ]
 #Ordinal regression predictions 
 
 # Predict classes
-predicted_classes <- predict(ord_model3, newdata = test_data, type = "class")
+predicted_classes <- predict(ord_model5, newdata = test_data, type = "class")
 
 # Create confusion matrix
 conf_matrix <- table(test_data$scorecat, predicted_classes)

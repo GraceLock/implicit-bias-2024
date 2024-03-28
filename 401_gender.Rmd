@@ -238,7 +238,20 @@ ord_model4 <- polr(scorecat ~ age + birthSex + att_family,
 summary(ord_model4)
 ```
 
-AICs: 122219.98, 122258.14, 122380.17, 122445.91
+```{r}
+#Multi ordinal logistic regression 5
+
+# Fit ordinal logistic regression model
+ord_model5 <- polr(scorecat ~ num_tests + politicalid
+                           + age + birthSex + att_family + att_carerr, 
+                  data = genderdata, Hess = TRUE)
+
+# Summarize the model
+summary(ord_model5)
+```
+
+
+AICs: 122219.98, 122258.14, 122380.17, 122445.91, 122238.14 (lasso)
 Ord model 1 has the lowest AIC. 
 Ord model 4 has the highest AIC. 
 

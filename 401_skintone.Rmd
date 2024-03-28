@@ -15,6 +15,7 @@ library(dplyr)
 library(tidyverse)
 library(socsci) #Helps with data manipulation
 library(glmnet) #Lasso Regression
+library(reshape2) #Lasso Regression visual 
 library(nnet) #Multinomial Logistic Regression
 library(rpart) #Regression Tree
 library(leaps) #Best subset regression
@@ -141,13 +142,12 @@ print(best_lambda)
 
 ```{r}
 #Dot Plot 
-library(reshape2)
 df <- data.frame(
   Row = c("Sex", "Education", "Political Identity", "Age", "Race", "Ethnicity", "Number of Tests", 
                   "Warmth 1", "Warmth 2", "Warmth 3"),
-  Skintone = c(0, 1, 1, 1, 0, 1, 1, 0, 0, 1),
+  Skintone = c(1, 1, 1, 1, 0, 1, 1, 1, 1, 0),
   Weight = c(1, 0, 1, 1, 0, 0, 1, 1, 1, 1),
-  Gender = c(1, 0, 1, 1, 0, 0, 1, 1, 1, 1),
+  Gender = c(1, 1, 1, 1, 1, 0, 1, 1, 1, 0),
   Sexuality = c(1, 0, 1, 1, 1, 0, 1, 1, 1, 1)
 )
 
@@ -160,10 +160,11 @@ data_long |>
   aes(x = Category, y = Row, color = as.factor(Value)) + 
   geom_point(size = 5) +
   scale_color_manual(values = c("red", "green"), labels = c("No", "Yes")) +
-  labs(title = "LASSO Regression Variable Selection",
+  labs(title = "Variable selection for the best model",
        x = "Bias Type",
        y = "Predictors",
        color = "Variable was selected:",
+       subtitle = "'best' model means the model with the lowest AIC value",
        caption = "Warmth 1, 3, and 3 represent how warm or cold a participant feels towards the groups\nof people in that bias test. See __ for more specifics on the warmth questions for each test.") +
   theme_minimal() +
   theme(legend.position = "bottom") 
@@ -398,7 +399,19 @@ ord_model4 <- polr(scorecat ~ num_tests + skintone_preference +age,
 summary(ord_model4)
 ```
 
-AICs: 63588.17, 63594.22, 63632.46, 63738.49
+```{r}
+#Multi ordinal logistic regression 5
+
+# Fit ordinal logistic regression model
+ord_model5 <- polr(scorecat ~ num_tests + ethnicity + politicalid + skintone_preference +
+                     age + edu, 
+                   data = skintonedata, Hess = TRUE)
+
+# Summarize the model
+summary(ord_model5)
+```
+
+AICs: 63588.17, 63594.22, 63632.46, 63738.49, 63594.22 (lasso)
 Ord model 1 has the lowest AIC. 
 Ord model 4 has the highest AIC. 
 
