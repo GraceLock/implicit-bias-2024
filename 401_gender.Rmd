@@ -117,63 +117,33 @@ print(best_lambda)
 ```
 
 ```{r}
-#Best subset selection 1 
+#Best Subset Selection
 
-# Perform best subset selection
-subset_model <- regsubsets(score ~ num_tests + ethnicity + politicalid
+# Generate all possible models
+  all_models <- regsubsets(score ~ num_tests + ethnicity + politicalid
                            + age + edu + birthSex + race + att_family + att_carerr, 
-                           data = genderdata, nvmax = 8)
-
-# Get the best model based on adjusted R-squared
-best_model <- which.max(summary(subset_model)$adjr2)
-
-# Summary of the best model
-summary(subset_model, id = best_model)
-```
-
-```{r}
-#Best subset selection 2
-
-# Perform best subset selection
-subset_model <- regsubsets(score ~ num_tests + ethnicity + politicalid
-                           + age + edu + birthSex + race + att_family + att_carerr, 
-                           data = genderdata, nvmax = 6)
-
-# Get the best model based on adjusted R-squared
-best_model <- which.max(summary(subset_model)$adjr2)
-
-# Summary of the best model
-summary(subset_model, id = best_model)
-```
-
-```{r}
-#Best subset selection 3
-
-# Perform best subset selection
-subset_model <- regsubsets(score ~ num_tests + ethnicity + politicalid
-                           + age + edu + birthSex + race + att_family + att_carerr, 
-                           data = genderdata, nvmax = 4)
-
-# Get the best model based on adjusted R-squared
-best_model <- which.max(summary(subset_model)$adjr2)
-
-# Summary of the best model
-summary(subset_model, id = best_model)
-```
-
-```{r}
-#Best subset selection 4
-
-# Perform best subset selection
-subset_model <- regsubsets(score ~ num_tests + ethnicity + politicalid
-                           + age + edu + birthSex + race + att_family + att_carerr, 
-                           data = genderdata, nvmax = 3)
-
-# Get the best model based on adjusted R-squared
-best_model <- which.max(summary(subset_model)$adjr2)
-
-# Summary of the best model
-summary(subset_model, id = best_model)
+                           data = genderdata, nvmax = 9)
+  
+  # Get the summary of all models
+  summary_all <- summary(all_models)
+  
+  # Check if summary is empty
+  if (length(summary_all$adjr2) == 0) {
+    cat("No models were generated.")
+    return(NULL)
+  }
+  
+  # Find the best model based on adjusted R^2
+  best_model <- which.max(summary_all$adjr2)
+  
+  # Get the details of the best model
+  best_summary <- summary_all[best_model]
+  
+  # Get the formula of the best model
+  formula_best <- names(which(summary_all$which[best_model, ]))
+  
+  # Print the results
+  cat("Best model formula:", paste("y ~", paste(formula_best, collapse = " + ")), "\n")
 ```
 
 ```{r}
@@ -195,7 +165,7 @@ summary(genderdata$scorecat)
 #Multi ordinal logistic regression 1
 
 # Fit ordinal logistic regression model
-ord_model1 <- polr(scorecat ~ num_tests + politicalid
+ord_model1 <- polr(scorecat ~ num_tests + ethnicity + politicalid
                            + age + edu + birthSex + race + att_family + att_carerr, 
                   data = genderdata, Hess = TRUE)
 
@@ -207,7 +177,7 @@ summary(ord_model1)
 #Multi ordinal logistic regression 2
 
 # Fit ordinal logistic regression model
-ord_model2 <- polr(scorecat ~ num_tests + politicalid
+ord_model5 <- polr(scorecat ~ num_tests + politicalid
                            + age + birthSex + att_family + att_carerr, 
                   data = genderdata, Hess = TRUE)
 
@@ -215,68 +185,28 @@ ord_model2 <- polr(scorecat ~ num_tests + politicalid
 summary(ord_model2)
 ```
 
-```{r}
-#Multi ordinal logistic regression 3
-
-# Fit ordinal logistic regression model
-ord_model3 <- polr(scorecat ~ num_tests
-                           + age + birthSex + att_family, 
-                  data = genderdata, Hess = TRUE)
-
-# Summarize the model
-summary(ord_model3)
-```
-
-```{r}
-#Multi ordinal logistic regression 4
-
-# Fit ordinal logistic regression model
-ord_model4 <- polr(scorecat ~ age + birthSex + att_family, 
-                  data = genderdata, Hess = TRUE)
-
-# Summarize the model
-summary(ord_model4)
-```
-
-```{r}
-#Multi ordinal logistic regression 5
-
-# Fit ordinal logistic regression model
-ord_model5 <- polr(scorecat ~ num_tests + politicalid
-                           + age + birthSex + att_family + att_carerr, 
-                  data = genderdata, Hess = TRUE)
-
-# Summarize the model
-summary(ord_model5)
-```
-
-
-AICs: 122219.98, 122258.14, 122380.17, 122445.91, 122238.14 (lasso)
-Ord model 1 has the lowest AIC. 
-Ord model 4 has the highest AIC. 
+Ord model 2 has the lowest AIC. 
 
 ```{r}
 #table 
-ctable <- coef(summary(ord_model1))
+ctable <- coef(summary(ord_model2))
 
 #calculate and store p values
 p <- pnorm(abs(ctable[, "t value"]), lower.tail = FALSE) * 2
 
 ## combined table
 ctable <- cbind(ctable, "p value" = p)
-```
 
-```{r}
 #Confidence intervals 
 
-ci <- confint(ord_model1)
+ci <- confint(ord_model2)
 ci
 ```
 
 ```{r}
 #Odds Ratio and confidence intervals 
 
-exp(cbind(OR = coef(ord_model1), ci))
+exp(cbind(OR = coef(ord_model2), ci))
 ```
 
 ```{r}
@@ -301,7 +231,7 @@ test_data <- genderdata[test_indices, ]
 #summary(ord_model)
 
 # Predict classes
-predicted_classes <- predict(ord_model1, newdata = test_data, type = "class")
+predicted_classes <- predict(ord_model2, newdata = test_data, type = "class")
 
 # Create confusion matrix
 conf_matrix <- table(test_data$scorecat, predicted_classes)

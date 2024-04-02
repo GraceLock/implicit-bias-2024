@@ -147,7 +147,7 @@ df <- data.frame(
                   "Warmth 1", "Warmth 2", "Warmth 3"),
   Skintone = c(1, 1, 1, 1, 0, 1, 1, 1, 1, 0),
   Weight = c(1, 0, 1, 1, 0, 0, 1, 1, 1, 1),
-  Gender = c(1, 1, 1, 1, 1, 0, 1, 1, 1, 0),
+  Gender = c(1, 0, 1, 1, 0, 0, 1, 1, 1, 0),
   Sexuality = c(1, 0, 1, 1, 1, 0, 1, 1, 1, 1)
 )
 
@@ -160,105 +160,38 @@ data_long |>
   aes(x = Category, y = Row, color = as.factor(Value)) + 
   geom_point(size = 5) +
   scale_color_manual(values = c("red", "green"), labels = c("No", "Yes")) +
-  labs(title = "Variable selection for the best model",
+  labs(title = "Variable Selection",
        x = "Bias Type",
        y = "Predictors",
        color = "Variable was selected:",
-       subtitle = "'best' model means the model with the lowest AIC value",
-       caption = "Warmth 1, 3, and 3 represent how warm or cold a participant feels towards the groups\nof people in that bias test. See __ for more specifics on the warmth questions for each test.") +
+       subtitle = "(variables in the ordinal logistic regression model with the lowest AIC)",
+       caption = "Warmth 1, 3, and 3 represent how warm or cold a participant feels towards the groups\nof people in that bias test. See appendix for more specifics on the warmth questions for each test.") +
   theme_minimal() +
   theme(legend.position = "bottom") 
 ```
 
 ```{r}
-#Multiple linear regression 
+#Best Subset Selection
 
-predictor_vars <- c("num_tests", "ethnicity", "politicalid", "skintone_preference",
-                    "warmth_light", "age", "edu", "birthSex")
-
-# Set seed for reproducibility (allows for the same random split when rerunning)
-set.seed(123)
-
-# Generate indices for train and test data
-train_indices <- sample(1:nrow(skintonedata), 0.8 * nrow(skintonedata))  # 80% for training
-test_indices <- setdiff(1:nrow(skintonedata), train_indices)  # Remaining for testing
-
-# Create training and test data frames
-train_data <- skintonedata[train_indices, ]
-test_data <- skintonedata[test_indices, ]
-
-train_data <- train_data[, c(predictor_vars, "score")]
-test_data <- test_data[, c(predictor_vars, "score")]
-
-#Model
-model <- lm(score ~ num_tests + ethnicity + politicalid+skintone_preference+
-                    warmth_light+age+edu+birthSex, data = train_data)
-
-# Summary of the model
-summary(model)
-
-# Predictions
-predictions <- predict(model, test_data)
-
-# Visualize actual vs predicted values
-plot(test_data$score, predictions, xlab = "Actual", ylab = "Predicted", main = "Actual vs Predicted")
-abline(0, 1, col = "red")  # add a 45-degree line for comparison
-```
-
-```{r}
-#Best Subset Selection 1
-
-# Perform best subset selection
-subset_model <- regsubsets(score ~ num_tests + ethnicity + politicalid + skintone_preference +
-                    warmth_light + age + edu + birthSex + race + warmth_dark, data = skintonedata, nvmax = 8)
-
-# Get the best model based on adjusted R-squared
-best_model <- which.max(summary(subset_model)$adjr2)
-
-# Summary of the best model
-summary(subset_model, id = best_model)
-```
-
-```{r}
-#Best Subset Selection 2
-
-# Perform best subset selection
-subset_model <- regsubsets(score ~ num_tests + ethnicity + politicalid + skintone_preference +
-                    warmth_light + age + edu + birthSex + race + warmth_dark, data = skintonedata, nvmax = 6)
-
-# Get the best model based on adjusted R-squared
-best_model <- which.max(summary(subset_model)$adjr2)
-
-# Summary of the best model
-summary(subset_model, id = best_model)
-```
-
-```{r}
-#Best Subset Selection 3
-
-# Perform best subset selection
-subset_model <- regsubsets(score ~ num_tests + ethnicity + politicalid + skintone_preference +
-                    warmth_light + age + edu + birthSex + race + warmth_dark, data = skintonedata, nvmax = 4)
-
-# Get the best model based on adjusted R-squared
-best_model <- which.max(summary(subset_model)$adjr2)
-
-# Summary of the best model
-summary(subset_model, id = best_model)
-```
-
-```{r}
-#Best Subset Selection 4
-
-# Perform best subset selection
-subset_model <- regsubsets(score ~ num_tests + ethnicity + politicalid + skintone_preference +
-                    warmth_light + age + edu + birthSex + race + warmth_dark, data = skintonedata, nvmax = 3)
-
-# Get the best model based on adjusted R-squared
-best_model <- which.max(summary(subset_model)$adjr2)
-
-# Summary of the best model
-summary(subset_model, id = best_model)
+# Generate all possible models
+  all_models <- regsubsets(score ~ num_tests + ethnicity + race + politicalid + skintone_preference +
+                             warmth_dark + warmth_light + age + edu + birthSex, 
+                           data = skintonedata, nvmax = 10)
+  
+  # Get the summary of all models
+  summary_all <- summary(all_models)
+  
+  # Find the best model based on adjusted R^2
+  best_model <- which.max(summary_all$adjr2)
+  
+  # Get the details of the best model
+  best_summary <- summary_all[best_model]
+  
+  # Get the formula of the best model
+  formula_best <- names(which(summary_all$which[best_model, ]))
+  
+  # Print the results
+  cat("Best model formula:", paste("y ~", paste(formula_best, collapse = " + ")), "\n")
 ```
 
 ```{r}
@@ -298,47 +231,6 @@ data_longer |>
   )
 ```
 
-```{r}
-#Multiple Linear Regressions
-
-predictor_vars <- c("num_tests", "ethnicity", "politicalid", "skintone_preference",
-                    "warmth_light", "age", "edu", "birthSex")
-
-# Set seed for reproducibility (allows for the same random split when rerunning)
-set.seed(123)
-
-# Generate indices for train and test data
-train_indices <- sample(1:nrow(skintonedata), 0.8 * nrow(skintonedata))  # 80% for training
-test_indices <- setdiff(1:nrow(skintonedata), train_indices)  # Remaining for testing
-
-# Create training and test data frames
-train_data <- skintonedata[train_indices, ]
-test_data <- skintonedata[test_indices, ]
-
-train_data <- train_data[, c(predictor_vars, "score")]
-test_data <- test_data[, c(predictor_vars, "score")]
-
-#Models
-model8 <- lm(score ~ num_tests + ethnicity + politicalid+skintone_preference+
-                    warmth_light+age+edu+birthSex, data = train_data)
-model6 <- lm(score ~ num_tests + ethnicity + politicalid+skintone_preference+age+edu, data = train_data)
-model4 <- lm(score ~ num_tests + politicalid+skintone_preference+age, data = train_data)
-model3 <- lm(score ~ num_tests +skintone_preference+age, data = train_data)
-
-# Summary of the model
-summary(model8) #0.07529
-summary(model6) #0.0751
-summary(model4) #0.07367
-summary(model3) #0.06924
-
-# Predictions
-predictions <- predict(model3, test_data)
-
-# Visualize actual vs predicted values
-plot(test_data$score, predictions, xlab = "Actual", ylab = "Predicted", main = "Actual vs Predicted")
-abline(0, 1, col = "red")  # add a 45-degree line for comparison
-```
-
 
 ```{r}
 #Create categories
@@ -371,49 +263,14 @@ summary(ord_model1)
 
 # Fit ordinal logistic regression model
 ord_model2 <- polr(scorecat ~ num_tests + ethnicity + politicalid + skintone_preference +
-                     age + edu, data = skintonedata, Hess = TRUE)
+                     age + edu, 
+                   data = skintonedata, Hess = TRUE)
 
 # Summarize the model
 summary(ord_model2)
 ```
 
-```{r}
-#Multi ordinal logistic regression 3
-
-# Fit ordinal logistic regression model
-ord_model3 <- polr(scorecat ~ num_tests + politicalid + skintone_preference +
-                     age, data = skintonedata, Hess = TRUE)
-
-# Summarize the model
-summary(ord_model3)
-```
-
-```{r}
-#Multi ordinal logistic regression 4
-
-# Fit ordinal logistic regression model
-ord_model4 <- polr(scorecat ~ num_tests + skintone_preference +age, 
-                   data = skintonedata, Hess = TRUE)
-
-# Summarize the model
-summary(ord_model4)
-```
-
-```{r}
-#Multi ordinal logistic regression 5
-
-# Fit ordinal logistic regression model
-ord_model5 <- polr(scorecat ~ num_tests + ethnicity + politicalid + skintone_preference +
-                     age + edu, 
-                   data = skintonedata, Hess = TRUE)
-
-# Summarize the model
-summary(ord_model5)
-```
-
-AICs: 63588.17, 63594.22, 63632.46, 63738.49, 63594.22 (lasso)
 Ord model 1 has the lowest AIC. 
-Ord model 4 has the highest AIC. 
 
 ```{r}
 #table 
@@ -432,7 +289,7 @@ ci <- confint(ord_model1)
 ci
 ```
 
-The 95% confidence intervals do not cross 0 so therefor they are significant - though they are very close to 0. 
+The 95% confidence intervals do not cross 0 so therefore they are significant - though they are very close to 0. 
 
 ```{r}
 #Odds Ratio and confidence intervals 
@@ -462,147 +319,13 @@ test_data <- skintonedata[test_indices, ]
 #Ordinal regression predictions 
 
 # Predict classes
-predicted_classes <- predict(ord_model1, newdata = test_data, type = "class")
+predicted_classes <- predict(ord_model2, newdata = test_data, type = "class")
 
 # Create confusion matrix
 conf_matrix <- table(test_data$scorecat, predicted_classes)
 
 # Print confusion matrix
 print(conf_matrix)
-```
-
-
-```{r}
-#Logistic regression (og)
-
-predictor_vars0 <- c("num_tests", "ethnicity", "politicalid", "skintone_preference",
-                    "warmth_light", "age", "edu", "birthSex")
-
-train_data0 <- train_data[, c(predictor_vars0, "scorecat")]
-test_data0 <- test_data[, c(predictor_vars0, "scorecat")]
-
-# Fit multinomial logistic regression model
-multinom_model0 <- multinom(scorecat ~ ., data = train_data0)
-
-# Print summary of the model
-summary(multinom_model0)
-```
-
-```{r}
-#Logistic Regression best subset regression 1
-
-predictor_vars1 <- c("num_tests", "ethnicity", "politicalid", "skintone_preference",
-                    "age", "edu")
-
-train_data1 <- train_data[, c(predictor_vars1, "scorecat")]
-test_data1 <- test_data[, c(predictor_vars1, "scorecat")]
-
-# Fit multinomial logistic regression model
-multinom_model1 <- multinom(scorecat ~ ., data = train_data1)
-
-# Print summary of the model
-summary(multinom_model1)
-```
-
-```{r}
-#Logistic Regression best subset regression 2
-
-predictor_vars2 <- c("num_tests", "politicalid", "skintone_preference", "age")
-
-train_data2 <- train_data[, c(predictor_vars2, "scorecat")]
-test_data2 <- test_data[, c(predictor_vars2, "scorecat")]
-
-# Fit multinomial logistic regression model
-multinom_model2 <- multinom(scorecat ~ ., data = train_data2)
-
-# Print summary of the model
-summary(multinom_model2)
-```
-
-```{r}
-#Logistic Regression best subset regression 3
-
-predictor_vars3 <- c("num_tests", "skintone_preference", "age")
-
-train_data3 <- train_data[, c(predictor_vars3, "scorecat")]
-test_data3 <- test_data[, c(predictor_vars3, "scorecat")]
-
-# Fit multinomial logistic regression model
-multinom_model3 <- multinom(scorecat ~ ., data = train_data3)
-
-# Print summary of the model
-summary(multinom_model3)
-```
-
-```{r}
-#Logistic Regression best subset regression 4
-
-predictor_vars4 <- c("num_tests", "ethnicity", "politicalid", "skintone_preference",
-                    "warmth_light", "age", "edu", "birthSex")
-
-train_data4 <- train_data[, c(predictor_vars4, "scorecat")]
-test_data4 <- test_data[, c(predictor_vars4, "scorecat")]
-
-# Fit multinomial logistic regression model
-multinom_model4 <- multinom(scorecat ~ ., data = train_data4)
-
-# Print summary of the model
-summary(multinom_model4)
-```
-
-
-```{r}
-#Logistic Regression Visual 
-
-# Predict classes
-predicted_classes <- predict(multinom_model, newdata = test_data, type = "class")
-
-# Create confusion matrix
-conf_matrix <- table(test_data$scorecat, predicted_classes)
-
-# Print confusion matrix
-print(conf_matrix)
-```
-
-```{r}
-# Predict probabilities for each class
-predicted_probs <- predict(multinom_model, newdata = skintonedata, type = "probs")
-
-# Extract the predicted probabilities for the true class
-true_class_probs <- predicted_probs[cbind(1:nrow(skintonedata), as.numeric(skintonedata$scorecat))]
-
-# Calculate log loss for each observation
-log_loss <- -log(true_class_probs)
-
-# Plot the distribution of log loss values
-hist(log_loss, main = "Distribution of Log Loss", 
-     xlab = "Log Loss", 
-     ylab = "Frequency", 
-     col = "skyblue", 
-     border = "white")
-```
-
-This visualization provides insights into the distribution of log loss values, which is a measure of the accuracy of the predicted probabilities. Lower log loss values indicate better calibration of predicted probabilities to the true outcomes.
-
-The log loss is defined as the negative natural logarithm of the predicted probability assigned to the true class. This value is commonly used as a measure of the accuracy of predicted probabilities in classification tasks.
-
-```{r}
-#Regression Tree 
-
-predictor_vars <- c("num_tests", "ethnicity", "race", "politicalid", "skintone_preference", "warmth_dark",
-                "warmth_light")
-response_var <- skintonedata$score
-
-# Fit regression tree model
-#tree_model <- rpart(response_var ~ ., data = skintonedata[, c(predictor_vars, "scorecat")], method = "anova")
-tree_model <- rpart(response_var ~ ., data = skintonedata[, c(predictor_vars, "scorecat")], method = "class")
-
-# Print the tree
-print(tree_model)
-
-# Plot the tree
-plot(tree_model)
-text(tree_model)
 ```
 
 ### Citations
