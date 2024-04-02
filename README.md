@@ -14,7 +14,7 @@ Project Implicit was created in 1998 by researchers Dr. Tony Greenwald (Universi
 This study will look at different demographics’ implicit bias levels. Since implicit bias has a large presence in society, affecting many social systems, it is important to look at its root and where to apply the strategies for limiting bias. With more knowledge on which type of implicit bias is strongest or most prevalent when and who is likely to have low implicit bias levels, preventative measures can be more focused.
 
 ### Data 
-The data for this project comes from Project Implicit's implicit association tests. The data sets were downloaded from their website. 
+The data for this project comes from Project Implicit's implicit association tests. The data sets were downloaded from their website. Link: https://osf.io/y9hiq/
 
 ### Code 
 All code is in R. 
