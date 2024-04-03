@@ -41,7 +41,13 @@ skintonedata |>  dplyr::select("session_id", "birthyear", "birthSex", "political
                         "warmth_light" = "Tlight",
                         "score" = "D_biep.LightSkin_Good_all") |>
                  mutate(age = 2024 - birthyear) |>
-                 dplyr::select(-birthyear) -> skintonedata
+                 dplyr::select(-birthyear) |>
+                 mutate(
+                   race = case_when(
+                     race %in% c(1, 2, 3, 4, 5, 7, 8) ~ 2,
+                     race == 6 ~ 1
+                   )
+                 )-> skintonedata
 
 #birthsex: 1 = male, 2 = female
 
@@ -56,42 +62,6 @@ skintonedata |>  dplyr::select("session_id", "birthyear", "birthSex", "political
 #politicalid: 1 "strongly conservative" 2 "moderately conservative" 3 "slightly conservative" 4 "neutral" 5 "slightly liberal" 6 "moderately liberal" 7 "strongly liberal"
 ```
 
-
-```{r}
-#LASSO Regression 
-
-predictor_vars <- c("num_tests", "ethnicity", "race", "politicalid", "skintone_preference", "warmth_dark",
-                "warmth_light", "age", "edu", "birthSex")
-response_var <- as.vector(skintonedata$score)
-
-X <- as.matrix(skintonedata[, predictor_vars])  # Predictor matrix
-Y <- response_var  # Response variable
-
-# Perform Lasso regression
-lasso_model <- glmnet(X, Y, alpha = 1)  # alpha = 1 for Lasso regression
-
-# Plot the cross-validated mean squared error (CV MSE) vs lambda
-plot(lasso_model)
-
-# Select lambda with minimum CV MSE
-best_lambda <- cv.glmnet(X, Y, alpha = 1)$lambda.min
-
-# Refit the model with the selected lambda
-lasso_model_best <- glmnet(X, Y, alpha = 1, lambda = best_lambda)
-
-# Make predictions
-predictions <- predict(lasso_model_best, newx = X)
-
-# Calculate MSE
-mse <- mean((predictions - Y)^2)
-
-# Print MSE
-print(paste("Mean Squared Error (MSE):", mse))
-
-# Print the coefficients
-print(coef(lasso_model_best))
-```
-
 Non-zero coefficients: Predictors with non-zero coefficients in the printed output are selected by the Lasso regression model. These predictors are deemed to have a significant influence on the response variable.
 
 Zero coefficients: Predictors with coefficients set to zero in the printed output are effectively excluded from the model. These predictors are considered to have little or no impact on the response variable according to the Lasso regularization.
@@ -101,7 +71,7 @@ Coefficient values: The magnitude of the coefficients indicates the strength of 
 Intercept term: Lasso regression also estimates an intercept term, which represents the expected value of the response variable when all predictor variables are zero.
 
 ```{r}
-#LASSO Regression 2
+#LASSO Regression 
 predictor_vars <- c('num_tests', 'ethnicity', 'race', 'politicalid', 'skintone_preference', 'warmth_dark',
                 'warmth_light', 'age', 'edu', 'birthSex')
 
@@ -248,44 +218,58 @@ summary(skintonedata$scorecat)
 ```
 
 ```{r}
-#Multi ordinal logistic regression 1
+#Multi ordinal logistic regression 1 (best subset selection)
 
 # Fit ordinal logistic regression model
-ord_model1 <- polr(scorecat ~ num_tests + ethnicity + politicalid + skintone_preference +
+skin_ord_model1 <- polr(scorecat ~ num_tests + ethnicity + politicalid + skintone_preference +
                     warmth_light + age + edu + birthSex, data = skintonedata, Hess = TRUE)
 
 # Summarize the model
-summary(ord_model1)
+summary(skin_ord_model1)
 ```
 
 ```{r}
-#Multi ordinal logistic regression 2
+#Multi ordinal logistic regression 2 (lassos)
 
 # Fit ordinal logistic regression model
-ord_model2 <- polr(scorecat ~ num_tests + ethnicity + politicalid + skintone_preference +
+skin_ord_model2 <- polr(scorecat ~ num_tests + ethnicity + politicalid + skintone_preference +
                      age + edu, 
                    data = skintonedata, Hess = TRUE)
 
 # Summarize the model
-summary(ord_model2)
+summary(skin_ord_model2)
 ```
 
 Ord model 1 has the lowest AIC. 
 
 ```{r}
 #table 
-ctable <- coef(summary(ord_model1))
+ctable <- coef(summary(skin_ord_model1))
 
 #calculate and store p values
 p <- pnorm(abs(ctable[, "t value"]), lower.tail = FALSE) * 2
 
 ## combined table
 ctable <- cbind(ctable, "p value" = p)
+
+# Define significance levels
+significance <- ifelse(ctable[, "p value"] < 0.001, "***",
+                       ifelse(ctable[, "p value"] < 0.01, "**",
+                              ifelse(ctable[, "p value"] < 0.05, "*",
+                                     ifelse(ctable[, "p value"] < 0.1, ".",""))))
+
+# Add significance levels to the table
+ctable <- cbind(ctable, "Significance" = significance)
+
+## combined table
+ctable <- cbind(ctable, "p value" = p)
+
+ctable
 ```
 
 ```{r}
 #Confidence intervals 
-ci <- confint(ord_model1)
+ci <- confint(skin_ord_model1)
 ci
 ```
 
@@ -293,40 +277,12 @@ The 95% confidence intervals do not cross 0 so therefore they are significant - 
 
 ```{r}
 #Odds Ratio and confidence intervals 
-exp(cbind(OR = coef(ord_model1), ci))
+exp(cbind(OR = coef(skin_ord_model1), ci))
 ```
 
 For every one unit increase in number of tests taken, the odds of being more bias is multiplied .85 times, holding constant all other variables. 
 For every one unit increase in ethnicity, the odds of being more bias is multiplied 1.12 times or increases 12%, holding constant all other variables. 
 The odds ratio is greatest for skintone_preference showing that this has the greatest impact which is in line with other models. 
-
-```{r}
-#Training and Test Data 
-
-# Set seed for reproducibility (allows for the same random split when rerunning)
-set.seed(123)
-
-# Generate indices for train and test data
-train_indices <- sample(1:nrow(skintonedata), 0.8 * nrow(skintonedata))  # 80% for training
-test_indices <- setdiff(1:nrow(skintonedata), train_indices)  # Remaining for testing
-
-# Create training and test data frames
-train_data <- skintonedata[train_indices, ]
-test_data <- skintonedata[test_indices, ]
-```
-
-```{r}
-#Ordinal regression predictions 
-
-# Predict classes
-predicted_classes <- predict(ord_model2, newdata = test_data, type = "class")
-
-# Create confusion matrix
-conf_matrix <- table(test_data$scorecat, predicted_classes)
-
-# Print confusion matrix
-print(conf_matrix)
-```
 
 ### Citations
 

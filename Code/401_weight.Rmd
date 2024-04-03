@@ -42,50 +42,22 @@ weightdata |> dplyr::select("session_id", "birthyear", "num_002", "birthSex", "e
                       "warmth_thin" = "tthin",
                       "warmth_fat" = "tfat",
                       "comptomost" = "comptomost_001",
-                      "politicalid" = "politicalid_7") -> weightdata
+                      "politicalid" = "politicalid_7") |>
+                 mutate(
+                   race = case_when(
+                     race %in% c(1, 2, 3, 4, 5, 7, 8) ~ 2,
+                     race == 6 ~ 1
+                   )
+                 )-> weightdata
 
 #comptomost: 1 "Much thinner" 2 "Moderately thinner" 3 "Slightly thinner" 4 "About the same" 5 "Slightly heavier" 6 "Moderately heavier" 7 "Much heavier"
 ```
 
 ```{r}
-#LASSO Regression 
+#LASSO Regression
 
-predictor_vars <- c("num_tests", "ethnicity", "race", "politicalid", "warmth_thin", "warmth_fat",
-                     "comptomost", "age", "edu", "birthSex")
-response_var <- as.vector(weightdata$score)
-
-X <- as.matrix(weightdata[, predictor_vars])  # Predictor matrix
-Y <- response_var  # Response variable
-
-# Perform Lasso regression
-lasso_model <- glmnet(X, Y, alpha = 1)  # alpha = 1 for Lasso regression
-
-# Plot the cross-validated mean squared error (CV MSE) vs lambda
-plot(lasso_model)
-
-# Select lambda with minimum CV MSE
-best_lambda <- cv.glmnet(X, Y, alpha = 1)$lambda.min
-
-# Refit the model with the selected lambda
-lasso_model_best <- glmnet(X, Y, alpha = 1, lambda = best_lambda)
-
-# Make predictions
-predictions <- predict(lasso_model_best, newx = X)
-
-# Calculate MSE
-mse <- mean((predictions - Y)^2)
-
-# Print MSE
-print(paste("Mean Squared Error (MSE):", mse))
-
-# Print the coefficients
-print(coef(lasso_model_best))
-```
-
-```{r}
-#LASSO Regression 2
-#predictor_vars <- c('num_tests', 'ethnicity', 'race', 'politicalid', 'skintone_preference', 'warmth_dark',
-                #'warmth_light', 'age', 'edu', 'birthSex')
+predictor_vars <- c("num_tests", "ethnicity", "politicalid", "age", "edu", 
+                           "birthSex", "race", "warmth_thin", "warmth_fat", "comptomost")
 
 X <- as.matrix(weightdata[, predictor_vars])  # Predictor matrix
 Y <- weightdata$score  # Response variable
@@ -167,36 +139,36 @@ summary(weightdata$scorecat)
 ```
 
 ```{r}
-#Multi ordinal logistic regression 1
+#Multi ordinal logistic regression 1 (best subset selection)
 
 # Fit ordinal logistic regression model
-ord_model1 <- polr(scorecat ~ num_tests + politicalid + age + edu + birthSex + race 
+weight_ord_model1 <- polr(scorecat ~ num_tests + politicalid + age + edu + birthSex + race 
                    + warmth_thin + warmth_fat + comptomost,
                   data = weightdata, Hess = TRUE)
 
 # Summarize the model
-summary(ord_model1)
+summary(weight_ord_model1)
 ```
 
 ```{r}
-#Multi ordinal logistic regression 2
+#Multi ordinal logistic regression 2 (lasso)
 
 # Fit ordinal logistic regression model
-ord_model5 <- polr(scorecat ~ num_tests + politicalid + age + 
+weight_ord_model2 <- polr(scorecat ~ num_tests + politicalid + age + 
                            birthSex + warmth_thin + warmth_fat + comptomost, 
                   data = weightdata, Hess = TRUE)
 
 # Summarize the model
-summary(ord_model2)
+summary(weight_ord_model2)
 ```
 
-Ord model 2 has a much lower AIC
+Ord model 1 has a lower AIC
 
 The AIC penalizes models for their complexity, meaning that it takes into account both how well the model fits the data and how many parameters it has. Therefore, when comparing models using AIC, the model with the lowest AIC value is preferred because it achieves a good balance between goodness of fit and simplicity.
 
 ```{r}
 #table 
-ctable <- coef(summary(ord_model2))
+ctable <- coef(summary(weight_ord_model1))
 
 #calculate and store p values
 p <- pnorm(abs(ctable[, "t value"]), lower.tail = FALSE) * 2
@@ -218,43 +190,15 @@ ctable
 
 ```{r}
 #Confidence intervals 
-ci <- confint(ord_model2)
+ci <- confint(weight_ord_model1)
 ci
 ```
 
 ```{r}
 #Odds Ratio and confidence intervals 
-exp(cbind(OR = coef(ord_model2), ci))
+exp(cbind(OR = coef(weight_ord_model1), ci))
 ```
 
-
-```{r}
-#Training and Test Data 
-
-# Set seed for reproducibility (allows for the same random split when rerunning)
-set.seed(123)
-
-# Generate indices for train and test data
-train_indices <- sample(1:nrow(weightdata), 0.8 * nrow(weightdata))  # 80% for training
-test_indices <- setdiff(1:nrow(weightdata), train_indices)  # Remaining for testing
-
-# Create training and test data frames
-train_data <- weightdata[train_indices, ]
-test_data <- weightdata[test_indices, ]
-```
-
-```{r}
-#Ordinal regression predictions 
-
-# Predict classes
-predicted_classes <- predict(ord_model2, newdata = test_data, type = "class")
-
-# Create confusion matrix
-conf_matrix <- table(test_data$scorecat, predicted_classes)
-
-# Print confusion matrix
-print(conf_matrix)
-```
 
 
 
