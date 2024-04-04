@@ -26,11 +26,8 @@ skintonedata |>
 skintonedata |> 
   mutate(
     race = case_when(
-      race %in% c(2, 3) ~ "Asian",
-      race == 5 ~ "Black or African American",
-      race == 6 ~ "White",
-      race %in% c(1, 4, 7) ~ "Other",
-      race == 8 ~ "Multiracial",
+      race == 1 ~ "White",
+      race == 2 ~ "Not White"
     ) ) |>
   ggplot() + 
   aes(
@@ -128,13 +125,6 @@ skintonedata |>
   geom_histogram()
 ```
 
-```{r}
-#Score Distributions 
-
-#politicalid: 1 "strongly conservative" 2 "moderately conservative" 3 "slightly conservative" 4 "neutral" 5 "slightly liberal" 6 "moderately liberal" 7 "strongly liberal"
-
-
-```
 
 
 
