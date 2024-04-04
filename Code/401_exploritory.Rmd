@@ -115,9 +115,34 @@ skintonedata |>
   ) + 
   geom_bar() +
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
 
-#Score  
+
+```{r}
+#Score distributions 
+
 skintonedata |> 
+  ggplot() + 
+  aes(
+    x = score
+  ) + 
+  geom_histogram()
+
+genderdata |> 
+  ggplot() + 
+  aes(
+    x = score
+  ) + 
+  geom_histogram()
+
+sexualitydata |> 
+  ggplot() + 
+  aes(
+    x = score
+  ) + 
+  geom_histogram()
+
+weightdata |> 
   ggplot() + 
   aes(
     x = score
@@ -125,6 +150,11 @@ skintonedata |>
   geom_histogram()
 ```
 
-
-
+```{r}
+#Score means
+mean(skintonedata$score)
+mean(genderdata$score)
+mean(sexualitydata$score)
+mean(weightdata$score)
+```
 
