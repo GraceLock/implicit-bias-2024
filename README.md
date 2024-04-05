@@ -20,10 +20,15 @@ The data for this project comes from Project Implicit's implicit association tes
 All code is in R. 
 
 ### File Navigation
-In the code folder, there are the following files:
-401_skintone.rmd - analysis for skin tone-based bias 
+In the code folder, there are the following files that contain all of the code and tests used in the study:
+
+401_skintone.rmd - analysis for skin tone-based bias and LASSO regression visual 
+
 401_gender.rmd - analysis for gender-based bias
+
 401_sexuality.rmd - analysis for sexuality-based bias
+
 401_weight.rmd - analysis for weight-based bias
+
 401_exploritory.rmd - all visuals and summary statistics gathered in the data exploration phase 
 
