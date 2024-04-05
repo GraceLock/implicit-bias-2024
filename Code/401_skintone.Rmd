@@ -164,43 +164,6 @@ data_long |>
   cat("Best model formula:", paste("y ~", paste(formula_best, collapse = " + ")), "\n")
 ```
 
-```{r}
-#Best Subset Selection Visual 
-
-selections_df <- data.frame(
-  nvmax = c(8, 6, 4, 3),
-  num_tests = c(1, 1, 1, 1),
-  age = c(1, 1, 1, 1),
-  skintone_preference = c(1, 1, 1, 1),
-  politicalid = c(1, 1, 1, 0),
-  ethnicity = c(1, 1, 0, 0),
-  edu = c(1, 1, 0, 0),
-  warmth_light = c(1, 0, 0, 0),
-  birthSex = c(1, 0, 0, 0),
-  race = c(0, 0, 0, 0),
-  warmth_dark = c(0, 0, 0, 0)
-)
-
-data_longer <- melt(selections_df, id.vars = "nvmax", variable.name = "Category", value.name = "Value")
-#data_long$Row <- factor(data_long$Row, levels = c("Political Identity", "Number of Tests", "Age", "Warmth 3",
-#                                                 "Warmth 2", "Warmth 1", "Sex", "Race", "Ethnicity", "Education"))
-
-data_longer |> 
-  ggplot() + 
-  aes(x = Category, y = nvmax, color = as.factor(Value)) + 
-  geom_point(size = 5) +
-  scale_color_manual(values = c("red", "green"), labels = c("No", "Yes")) +
-  labs(title = "Best Subset Selection: Skintone Data",
-       x = "Predictors",
-       y = "Number of predictors to select",
-       color = "Variable was selected:") +
-  theme_minimal() +
-  theme(legend.position = "bottom") +
-  theme(
-    axis.text.x = element_text(angle = 25, hjust = 1)
-  )
-```
-
 
 ```{r}
 #Create categories
