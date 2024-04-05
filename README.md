@@ -1,5 +1,5 @@
 # implicit-bias-2024
-This is a data analytics senior research project on implicit bias using the implicit association test data. 
+This is a data analytics senior research project on implicit bias using the implicit association test data from Project Implicit. 
 
 ### Author 
 Grace Lock | 
@@ -18,3 +18,12 @@ The data for this project comes from Project Implicit's implicit association tes
 
 ### Code 
 All code is in R. 
+
+### File Navigation
+In the code folder, there are the following files:
+401_skintone.rmd - analysis for skin tone-based bias 
+401_gender.rmd - analysis for gender-based bias
+401_sexuality.rmd - analysis for sexuality-based bias
+401_weight.rmd - analysis for weight-based bias
+401_exploritory.rmd - all visuals and summary statistics gathered in the data exploration phase 
+
