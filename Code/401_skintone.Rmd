@@ -15,9 +15,7 @@ library(dplyr)
 library(tidyverse)
 library(socsci) #Helps with data manipulation
 library(glmnet) #Lasso Regression
-library(reshape2) #Lasso Regression visual 
-library(nnet) #Multinomial Logistic Regression
-library(rpart) #Regression Tree
+library(reshape2) #Lasso Regression visual
 library(leaps) #Best subset regression
 library(MASS) #Multiordinal logistic regression - messes with dplyr select function
 ```
@@ -252,6 +250,10 @@ The odds ratio is greatest for skintone_preference showing that this has the gre
 ```{r}
 rpart_cit <- citation("rpart")
 glmnet_cit <- citation("glmnet")
+citation()
+ord_log_reg <- citation("MASS")
+
+ord_log_reg
 ```
 
 

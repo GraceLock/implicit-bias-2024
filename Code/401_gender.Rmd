@@ -15,8 +15,6 @@ library(dplyr)
 library(tidyverse)
 library(socsci) #Helps with data manipulation
 library(glmnet) #Lasso Regression
-library(nnet) #Multinomial Logistic Regression
-library(rpart) #Regression Tree
 library(leaps) #Best subset regression
 library(MASS) #Ordinal logistic regression
 ```
