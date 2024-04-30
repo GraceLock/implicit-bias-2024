@@ -1,23 +1,73 @@
----
-title: "401_exploritory"
-author: "Grace Lock"
-date: "2024-03-27"
-output: rmarkdown::github_document
----
+401_exploritory
+================
+Grace Lock
+2024-03-27
 
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+``` r
+library(dplyr)
 ```
 
-```{r}
-library(dplyr)
+    ## 
+    ## Attaching package: 'dplyr'
+
+    ## The following objects are masked from 'package:stats':
+    ## 
+    ##     filter, lag
+
+    ## The following objects are masked from 'package:base':
+    ## 
+    ##     intersect, setdiff, setequal, union
+
+``` r
 library(tidyr)
 library(ggplot2)
 library(haven)
 library(socsci)
 ```
- 
-```{r}
+
+    ## Loading required package: tidyverse
+
+    ## ── Attaching core tidyverse packages ──────────────────────── tidyverse 2.0.0 ──
+    ## ✔ forcats   1.0.0     ✔ readr     2.1.4
+    ## ✔ lubridate 1.9.3     ✔ stringr   1.5.0
+    ## ✔ purrr     1.0.2     ✔ tibble    3.2.1
+    ## ── Conflicts ────────────────────────────────────────── tidyverse_conflicts() ──
+    ## ✖ dplyr::filter() masks stats::filter()
+    ## ✖ dplyr::lag()    masks stats::lag()
+    ## ℹ Use the conflicted package (<http://conflicted.r-lib.org/>) to force all conflicts to become errors
+    ## Loading required package: rlang
+    ## 
+    ## 
+    ## Attaching package: 'rlang'
+    ## 
+    ## 
+    ## The following objects are masked from 'package:purrr':
+    ## 
+    ##     %@%, flatten, flatten_chr, flatten_dbl, flatten_int, flatten_lgl,
+    ##     flatten_raw, invoke, splice
+    ## 
+    ## 
+    ## Loading required package: scales
+    ## 
+    ## 
+    ## Attaching package: 'scales'
+    ## 
+    ## 
+    ## The following object is masked from 'package:purrr':
+    ## 
+    ##     discard
+    ## 
+    ## 
+    ## The following object is masked from 'package:readr':
+    ## 
+    ##     col_factor
+    ## 
+    ## 
+    ## Loading required package: broom
+    ## 
+    ## Loading required package: glue
+
+``` r
 #Load all of the data
 
 #Skintone 
@@ -113,11 +163,9 @@ weightdata |> dplyr::select("session_id", "birthyear", "num_002", "birthSex", "e
                  )-> weightdata
 ```
 
-
-
 ## Skintone data exploration
 
-```{r}
+``` r
 #Population data 
 
 #Age
@@ -127,7 +175,13 @@ skintonedata |>
     x = age
   ) + 
   geom_histogram()
+```
 
+    ## `stat_bin()` using `bins = 30`. Pick better value with `binwidth`.
+
+![](401_exploritory_files/figure-gfm/unnamed-chunk-3-1.png)<!-- -->
+
+``` r
 #Race
 skintonedata |> 
   mutate(
@@ -140,7 +194,11 @@ skintonedata |>
     x = race
   ) + 
   geom_bar() 
+```
 
+![](401_exploritory_files/figure-gfm/unnamed-chunk-3-2.png)<!-- -->
+
+``` r
 #Number of tests
 skintonedata |> 
   ggplot() + 
@@ -148,7 +206,13 @@ skintonedata |>
     x = num_tests
   ) + 
   geom_histogram()
+```
 
+    ## `stat_bin()` using `bins = 30`. Pick better value with `binwidth`.
+
+![](401_exploritory_files/figure-gfm/unnamed-chunk-3-3.png)<!-- -->
+
+``` r
 #Political Identification
 skintonedata |> 
   mutate(
@@ -168,7 +232,11 @@ skintonedata |>
   ) + 
   geom_bar() +
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
 
+![](401_exploritory_files/figure-gfm/unnamed-chunk-3-4.png)<!-- -->
+
+``` r
 #Education
 skintonedata |>
   mutate(
@@ -187,7 +255,11 @@ skintonedata |>
   ) + 
   geom_bar()  +
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
 
+![](401_exploritory_files/figure-gfm/unnamed-chunk-3-5.png)<!-- -->
+
+``` r
 #Sex
 skintonedata |> 
   mutate(
@@ -201,7 +273,11 @@ skintonedata |>
     x = birthSex
   ) + 
   geom_bar()
+```
 
+![](401_exploritory_files/figure-gfm/unnamed-chunk-3-6.png)<!-- -->
+
+``` r
 #Skin tone Preference
 skintonedata |> 
   mutate(
@@ -223,22 +299,61 @@ skintonedata |>
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
 ```
 
+![](401_exploritory_files/figure-gfm/unnamed-chunk-3-7.png)<!-- -->
+
 ## Score Distributions
-```{r}
+
+``` r
 #Score means
 mean(skintonedata$score)
-mean(genderdata$score)
-mean(sexualitydata$score)
-mean(weightdata$score)
+```
 
+    ## [1] 0.2744848
+
+``` r
+mean(genderdata$score)
+```
+
+    ## [1] 0.339338
+
+``` r
+mean(sexualitydata$score)
+```
+
+    ## [1] 0.1066166
+
+``` r
+mean(weightdata$score)
+```
+
+    ## [1] 0.4626187
+
+``` r
 #Score SDs
 sd(skintonedata$score)
+```
+
+    ## [1] 0.4197749
+
+``` r
 sd(genderdata$score)
+```
+
+    ## [1] 0.3737222
+
+``` r
 sd(sexualitydata$score)
+```
+
+    ## [1] 0.4948397
+
+``` r
 sd(weightdata$score)
 ```
 
-```{r}
+    ## [1] 0.4058308
+
+``` r
 skintonedata$dataset <- "Skin tone based bias"
 genderdata$dataset <- "Gender based bias"
 sexualitydata$dataset <- "Sexuality based bias"
@@ -266,9 +381,13 @@ ggplot(combined_df, aes(x = score)) +
   theme_minimal()
 ```
 
-## Gender data exploration 
+    ## `stat_bin()` using `bins = 30`. Pick better value with `binwidth`.
 
-```{r}
+![](401_exploritory_files/figure-gfm/unnamed-chunk-5-1.png)<!-- -->
+
+## Gender data exploration
+
+``` r
 #Population data 
 
 #Age
@@ -278,7 +397,13 @@ genderdata |>
     x = age
   ) + 
   geom_histogram()
+```
 
+    ## `stat_bin()` using `bins = 30`. Pick better value with `binwidth`.
+
+![](401_exploritory_files/figure-gfm/unnamed-chunk-6-1.png)<!-- -->
+
+``` r
 #Race
 genderdata |> 
   mutate(
@@ -291,7 +416,11 @@ genderdata |>
     x = race
   ) + 
   geom_bar() 
+```
 
+![](401_exploritory_files/figure-gfm/unnamed-chunk-6-2.png)<!-- -->
+
+``` r
 #Number of tests
 genderdata |> 
   ggplot() + 
@@ -299,7 +428,13 @@ genderdata |>
     x = num_tests
   ) + 
   geom_histogram()
+```
 
+    ## `stat_bin()` using `bins = 30`. Pick better value with `binwidth`.
+
+![](401_exploritory_files/figure-gfm/unnamed-chunk-6-3.png)<!-- -->
+
+``` r
 #Political Identification
 genderdata |> 
   mutate(
@@ -319,7 +454,11 @@ genderdata |>
   ) + 
   geom_bar() +
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
 
+![](401_exploritory_files/figure-gfm/unnamed-chunk-6-4.png)<!-- -->
+
+``` r
 #Education
 genderdata |>
   mutate(
@@ -338,7 +477,11 @@ genderdata |>
   ) + 
   geom_bar()  +
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
 
+![](401_exploritory_files/figure-gfm/unnamed-chunk-6-5.png)<!-- -->
+
+``` r
 #Sex
 genderdata |> 
   mutate(
@@ -354,11 +497,11 @@ genderdata |>
   geom_bar()
 ```
 
+![](401_exploritory_files/figure-gfm/unnamed-chunk-6-6.png)<!-- -->
 
+## Sexuality data exploration
 
-## Sexuality data exploration 
-
-```{r}
+``` r
 #Population data 
 
 #Age
@@ -368,7 +511,13 @@ sexualitydata |>
     x = age
   ) + 
   geom_histogram()
+```
 
+    ## `stat_bin()` using `bins = 30`. Pick better value with `binwidth`.
+
+![](401_exploritory_files/figure-gfm/unnamed-chunk-7-1.png)<!-- -->
+
+``` r
 #Race
 sexualitydata |> 
   mutate(
@@ -381,7 +530,11 @@ sexualitydata |>
     x = race
   ) + 
   geom_bar() 
+```
 
+![](401_exploritory_files/figure-gfm/unnamed-chunk-7-2.png)<!-- -->
+
+``` r
 #Number of tests
 sexualitydata |> 
   ggplot() + 
@@ -389,7 +542,13 @@ sexualitydata |>
     x = num_tests
   ) + 
   geom_histogram()
+```
 
+    ## `stat_bin()` using `bins = 30`. Pick better value with `binwidth`.
+
+![](401_exploritory_files/figure-gfm/unnamed-chunk-7-3.png)<!-- -->
+
+``` r
 #Political Identification
 sexualitydata |> 
   mutate(
@@ -409,7 +568,11 @@ sexualitydata |>
   ) + 
   geom_bar() +
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
 
+![](401_exploritory_files/figure-gfm/unnamed-chunk-7-4.png)<!-- -->
+
+``` r
 #Education
 sexualitydata |>
   mutate(
@@ -428,7 +591,11 @@ sexualitydata |>
   ) + 
   geom_bar()  +
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
 
+![](401_exploritory_files/figure-gfm/unnamed-chunk-7-5.png)<!-- -->
+
+``` r
 #Sex
 sexualitydata |> 
   mutate(
@@ -444,10 +611,11 @@ sexualitydata |>
   geom_bar()
 ```
 
+![](401_exploritory_files/figure-gfm/unnamed-chunk-7-6.png)<!-- -->
 
-## Weight data exploration 
+## Weight data exploration
 
-```{r}
+``` r
 #Population data 
 
 #Age
@@ -457,7 +625,13 @@ weightdata |>
     x = age
   ) + 
   geom_histogram()
+```
 
+    ## `stat_bin()` using `bins = 30`. Pick better value with `binwidth`.
+
+![](401_exploritory_files/figure-gfm/unnamed-chunk-8-1.png)<!-- -->
+
+``` r
 #Race
 weightdata |> 
   mutate(
@@ -470,7 +644,11 @@ weightdata |>
     x = race
   ) + 
   geom_bar() 
+```
 
+![](401_exploritory_files/figure-gfm/unnamed-chunk-8-2.png)<!-- -->
+
+``` r
 #Number of tests
 weightdata |> 
   ggplot() + 
@@ -478,7 +656,13 @@ weightdata |>
     x = num_tests
   ) + 
   geom_histogram()
+```
 
+    ## `stat_bin()` using `bins = 30`. Pick better value with `binwidth`.
+
+![](401_exploritory_files/figure-gfm/unnamed-chunk-8-3.png)<!-- -->
+
+``` r
 #Political Identification
 weightdata |> 
   mutate(
@@ -498,7 +682,11 @@ weightdata |>
   ) + 
   geom_bar() +
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
 
+![](401_exploritory_files/figure-gfm/unnamed-chunk-8-4.png)<!-- -->
+
+``` r
 #Education
 weightdata |>
   mutate(
@@ -517,7 +705,11 @@ weightdata |>
   ) + 
   geom_bar()  +
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
 
+![](401_exploritory_files/figure-gfm/unnamed-chunk-8-5.png)<!-- -->
+
+``` r
 #Sex
 weightdata |> 
   mutate(
@@ -533,8 +725,9 @@ weightdata |>
   geom_bar()
 ```
 
+![](401_exploritory_files/figure-gfm/unnamed-chunk-8-6.png)<!-- -->
 
-```{r}
+``` r
 Skintone = c(1.02, 1.12, 0.92, 1.02, 0.85, 0.93, NA, 1.00, 1.48, NA)
 Skin_sig = c(99.9, 99.9, 99.9, 99.9, 99.9, 99, NA, 0, 99.9, NA)
 Gender = c(1.02, 1.01, 0.95, 1.01, 0.94, 1.67, 0.81, 1.11, 0.93, NA)
@@ -580,8 +773,49 @@ merged_data <- merge(x = pivot1_df, y = pivot2_df, by = c("BiasType", "row_names
 merged_data
 ```
 
+    ##     BiasType          row_names Value Significance
+    ## 1     Gender                Age  1.01         99.9
+    ## 2     Gender          Education  1.02         99.9
+    ## 3     Gender          Ethnicity  1.01          0.0
+    ## 4     Gender    Number of Tests  0.94         99.9
+    ## 5     Gender Political Identity  0.95         99.9
+    ## 6     Gender               Race  0.81         99.9
+    ## 7     Gender                Sex  1.67         99.9
+    ## 8     Gender            Warmth1  1.11         99.9
+    ## 9     Gender            Warmth2  0.93         99.9
+    ## 10    Gender            Warmth3    NA           NA
+    ## 11 Sexuality                Age  1.01         99.9
+    ## 12 Sexuality          Education  1.01         99.0
+    ## 13 Sexuality          Ethnicity  1.01          0.0
+    ## 14 Sexuality    Number of Tests  0.93         99.9
+    ## 15 Sexuality Political Identity  0.77         99.9
+    ## 16 Sexuality               Race  1.21         99.9
+    ## 17 Sexuality                Sex  0.74         99.9
+    ## 18 Sexuality            Warmth1  0.89         99.9
+    ## 19 Sexuality            Warmth2  0.89         99.9
+    ## 20 Sexuality            Warmth3  1.23         99.9
+    ## 21  Skintone                Age  1.02         99.9
+    ## 22  Skintone          Education  1.02         99.9
+    ## 23  Skintone          Ethnicity  1.12         99.9
+    ## 24  Skintone    Number of Tests  0.85         99.9
+    ## 25  Skintone Political Identity  0.92         99.9
+    ## 26  Skintone               Race    NA           NA
+    ## 27  Skintone                Sex  0.93         99.0
+    ## 28  Skintone            Warmth1  1.00          0.0
+    ## 29  Skintone            Warmth2  1.48         99.9
+    ## 30  Skintone            Warmth3    NA           NA
+    ## 31    Weight                Age  1.01         99.9
+    ## 32    Weight          Education  1.00          0.0
+    ## 33    Weight          Ethnicity    NA           NA
+    ## 34    Weight    Number of Tests  0.76         99.9
+    ## 35    Weight Political Identity  0.91         99.9
+    ## 36    Weight               Race  0.80         99.9
+    ## 37    Weight                Sex  0.86         99.9
+    ## 38    Weight            Warmth1  1.12         99.9
+    ## 39    Weight            Warmth2  0.88         99.9
+    ## 40    Weight            Warmth3  0.87         99.9
 
-```{r, warning = FALSE}
+``` r
 # Convert the variable to a factor with levels 0, 1, 2, and 3
 merged_data$Significance <- factor(merged_data$Significance, levels = c(0, 95, 99, 99.9))
 
@@ -619,12 +853,4 @@ merged_data |>
   theme(legend.position = "bottom") 
 ```
 
-
-
-
-
-
-
-
-
-
+![](401_exploritory_files/figure-gfm/unnamed-chunk-10-1.png)<!-- -->
