@@ -31,3 +31,5 @@ In the code folder, there are the following files that contain all of the code a
 401_weight.rmd /.md - analysis for weight-based bias
 
 401_exploritory.rmd /.md - all visuals and summary statistics gathered in the data exploration phase 
+
+The folders ending in /figures-gfm have the images for the models of each bias type. For gender, sexuality, and weight the LASSO regression plot for is the only image. The skintone folder also has the variable selection visual. The exploritory folder has images related to the population of the IAT participants, d-score distributions, and a plot of all the odds ratios for each bias type. 
