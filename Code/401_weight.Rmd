@@ -2,7 +2,7 @@
 title: "401_Weight"
 author: "Grace Lock"
 date: "2024-03-27"
-output: html_document
+output: rmarkdown::github_document
 ---
 
 ```{r setup, include=FALSE}

@@ -126,6 +126,12 @@ mean(skintonedata$score)
 mean(genderdata$score)
 mean(sexualitydata$score)
 mean(weightdata$score)
+
+#Score SDs
+sd(skintonedata$score)
+sd(genderdata$score)
+sd(sexualitydata$score)
+sd(weightdata$score)
 ```
 
 ```{r}
@@ -422,3 +428,99 @@ weightdata |>
   ) + 
   geom_bar()
 ```
+
+
+```{r}
+Skintone = c(1.02, 1.12, 0.92, 1.02, 0.85, 0.93, NA, 1.00, 1.48, NA)
+Skin_sig = c(99.9, 99.9, 99.9, 99.9, 99.9, 99, NA, 0, 99.9, NA)
+Gender = c(1.02, 1.01, 0.95, 1.01, 0.94, 1.67, 0.81, 1.11, 0.93, NA)
+Gender_sig = c(99.9, 0, 99.9, 99.9, 99.9, 99.9, 99.9, 99.9, 99.9, NA)
+Sexuality = c(1.01, 1.01, 0.77, 1.01, 0.93, 0.74, 1.21, 0.89, 0.89, 1.23)
+Sex_sig = c(99, 0, 99.9, 99.9, 99.9, 99.9, 99.9, 99.9, 99.9, 99.9)
+Weight = c(1.00, NA, 0.91, 1.01, 0.76, 0.86, 0.80, 1.12, 0.88, 0.87)
+Weight_sig = c(0, NA, 99.9, 99.9, 99.9, 99.9, 99.9, 99.9, 99.9, 99.9)
+
+row_labels <- c("Education", "Ethnicity", "Political Identity", "Age", "Number of Tests", 
+                "Sex", "Race", "Warmth1", "Warmth2", "Warmth3")
+
+viz_data <- data.frame(Skintone, Skin_sig, Gender, Gender_sig, Sexuality, Sex_sig, Weight, Weight_sig)
+rownames(viz_data) <- row_labels
+
+# Add row names as a separate column
+viz_data$row_names <- rownames(viz_data)
+
+# Pivot the data into longer format
+pivot1_df <- dplyr::select(viz_data, row_names, Skintone, Gender, Sexuality, Weight) |>
+                 pivot_longer(
+                           cols = -row_names,
+                           names_to = "BiasType",
+                           values_to = "Value") -> pivot1_df
+
+pivot2_df <- dplyr::select(viz_data, row_names, Skin_sig, Sex_sig, Gender_sig, Weight_sig) |>
+  pivot_longer(
+    cols = -row_names, 
+    names_to = "BiasType",
+    values_to = "Significance"
+  ) |> 
+  mutate(
+    BiasType = case_when(
+      BiasType == "Skin_sig" ~ "Skintone",
+      BiasType == "Gender_sig" ~ "Gender",
+      BiasType == "Sex_sig" ~ "Sexuality",
+      BiasType == "Weight_sig" ~ "Weight"
+    )
+  ) -> pivot2_df
+
+merged_data <- merge(x = pivot1_df, y = pivot2_df, by = c("BiasType", "row_names"))
+
+merged_data
+```
+
+
+```{r, warning = FALSE}
+# Convert the variable to a factor with levels 0, 1, 2, and 3
+merged_data$Significance <- factor(merged_data$Significance, levels = c(0, 95, 99, 99.9))
+
+# Define colors for each level
+colors <- c("gray", "blue", "green", "orange")  # You can customize the colors as needed
+
+# Plot with ggplot
+merged_data |>
+  ggplot() + 
+  aes(
+    y = Value, 
+    x = row_names,
+    fill = Significance  # Use fill aesthetic for color
+  ) + 
+  geom_segment(aes(x=row_names, xend=row_names, y=1, yend=Value), color="grey") +
+  geom_point(size=3, shape = 21) +  # Use shape 21 for filled points
+  scale_fill_manual(values = colors) +  # Use manual scale for colors
+  theme_light() +
+  theme(
+    panel.grid.major.x = element_blank(),
+    panel.border = element_blank(),
+    axis.ticks.x = element_blank()
+  ) + 
+  geom_hline(yintercept = 1, linetype = "dashed", color = "black") +
+  facet_wrap(~BiasType) +
+  theme(
+    axis.text.x = element_text(angle = 35, hjust = 1)
+  ) + 
+  labs(
+    title = "Logistic Regression Odds Ratio with Significance by Bias Type",
+    x = "Demographics",
+    y = "Odds Ratio",
+    fill = "Significance Level"
+  )+
+  theme(legend.position = "bottom") 
+```
+
+
+
+
+
+
+
+
+
+

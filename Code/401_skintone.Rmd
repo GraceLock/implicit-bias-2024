@@ -2,7 +2,7 @@
 title: "DA401 Project"
 author: "Grace Lock"
 date: "2024-01-30"
-output: html_document
+output: rmarkdown::github_document
 ---
 
 ```{r setup, include=FALSE}
@@ -113,10 +113,10 @@ print(best_lambda)
 df <- data.frame(
   Row = c("Sex", "Education", "Political Identity", "Age", "Race", "Ethnicity", "Number of Tests", 
                   "Warmth 1", "Warmth 2", "Warmth 3"),
-  Skintone = c(1, 1, 1, 1, 0, 1, 1, 1, 1, 0),
-  Weight = c(1, 0, 1, 1, 0, 0, 1, 1, 1, 1),
-  Gender = c(1, 0, 1, 1, 0, 0, 1, 1, 1, 0),
-  Sexuality = c(1, 0, 1, 1, 1, 0, 1, 1, 1, 1)
+  Skintone = c(1, 1, 1, 1, 1, 1, 1, 1, 1, 0),
+  Weight = c(1, 0, 1, 1, 1, 1, 1, 1, 1, 1),
+  Gender = c(1, 1, 1, 1, 1, 1, 1, 1, 1, 0),
+  Sexuality = c(1, 1, 1, 1, 1, 1, 1, 1, 1, 1)
 )
 
 data_long <- melt(df, id.vars = "Row", variable.name = "Category", value.name = "Value")
@@ -125,13 +125,13 @@ data_long$Row <- factor(data_long$Row, levels = c("Political Identity", "Number 
 
 data_long |> 
   ggplot() + 
-  aes(x = Category, y = Row, color = as.factor(Value)) + 
+  aes(x = Category, y = Row, shape = as.factor(Value)) + 
   geom_point(size = 5) +
-  scale_color_manual(values = c("red", "green"), labels = c("No", "Yes")) +
+  scale_shape_manual(values = c(1, 17), labels = c("No", "Yes")) +
   labs(title = "Variable Selection",
        x = "Bias Type",
        y = "Predictors",
-       color = "Variable was selected:",
+       shape = "Variable was selected: ",
        subtitle = "(variables in the ordinal logistic regression model with the lowest AIC)",
        caption = "Warmth 1, 3, and 3 represent how warm or cold a participant feels towards the groups\nof people in that bias test. See appendix for more specifics on the warmth questions for each test.") +
   theme_minimal() +
@@ -245,15 +245,5 @@ For every one unit increase in number of tests taken, the odds of being more bia
 For every one unit increase in ethnicity, the odds of being more bias is multiplied 1.12 times or increases 12%, holding constant all other variables. 
 The odds ratio is greatest for skintone_preference showing that this has the greatest impact which is in line with other models. 
 
-### Citations
-
-```{r}
-rpart_cit <- citation("rpart")
-glmnet_cit <- citation("glmnet")
-citation()
-ord_log_reg <- citation("MASS")
-
-ord_log_reg
-```
 
 
